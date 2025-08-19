@@ -47,47 +47,82 @@
     };
 
     /**
-     * Dynamically load a JavaScript file
+     * Dynamically load a JavaScript file by fetching and executing
      * @param {string} src - Source URL/path of the script
      * @returns {Promise} Promise that resolves when script is loaded
      */
-    function loadScript(src) {
-        return new Promise((resolve, reject) => {
+    async function loadScript(src) {
+        try {
             // Check if already loaded
-            const existingScript = document.querySelector(`script[src="${src}"]`);
+            const existingScript = document.querySelector(`script[data-module-src="${src}"]`);
             if (existingScript) {
                 console.log(`⚡ Module already loaded: ${src}`);
-                resolve();
                 return;
             }
 
-            const script = document.createElement('script');
-            script.src = src;
-            script.type = 'text/javascript';
-            script.crossOrigin = 'anonymous'; // Allow cross-origin loading
+            console.log(`📡 Fetching module content: ${src}`);
             
-            // Set timeout for individual script loading
-            const timeout = setTimeout(() => {
-                script.remove();
-                reject(new Error(`Timeout loading ${src}`));
-            }, 10000);
-            
-            script.onload = () => {
-                clearTimeout(timeout);
-                console.log(`✓ Loaded module: ${src}`);
-                resolve();
+            // Create fetch with timeout
+            const fetchWithTimeout = async (url, options, timeoutMs = 10000) => {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+                
+                try {
+                    const response = await fetch(url, {
+                        ...options,
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+                    return response;
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    if (error.name === 'AbortError') {
+                        throw new Error(`Request timeout after ${timeoutMs}ms`);
+                    }
+                    throw error;
+                }
             };
             
-            script.onerror = (error) => {
-                clearTimeout(timeout);
-                script.remove();
-                console.error(`✗ Failed to load module: ${src}`, error);
-                reject(new Error(`Failed to load ${src}`));
-            };
+            // Fetch the script content
+            const response = await fetchWithTimeout(src, {
+                mode: 'cors',
+                cache: 'no-cache',
+                headers: {
+                    'Accept': 'text/plain, text/javascript, application/javascript, */*'
+                }
+            });
 
-            // Add to document head
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const scriptContent = await response.text();
+            
+            if (!scriptContent.trim()) {
+                throw new Error('Empty script content');
+            }
+
+            // Create a script element with the fetched content
+            const script = document.createElement('script');
+            script.type = 'text/javascript';
+            script.setAttribute('data-module-src', src);
+            
+            // Add source mapping comment for debugging
+            const sourceMap = `\n//# sourceURL=${src}`;
+            script.textContent = scriptContent + sourceMap;
+
+            // Add to document head and execute
             document.head.appendChild(script);
-        });
+            
+            // Small delay to allow module to initialize
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+            console.log(`✓ Loaded and executed module: ${src}`);
+            
+        } catch (error) {
+            console.error(`✗ Failed to load module: ${src}`, error.message);
+            throw new Error(`Failed to load ${src}: ${error.message}`);
+        }
     }
 
     /**
