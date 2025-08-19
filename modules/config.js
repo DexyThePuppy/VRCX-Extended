@@ -1,7 +1,7 @@
-// ==UserScript==
+// ==Module==
 // @name         VRCX-Extended Configuration
 // @description  Configuration constants and settings for VRCX-Extended
-// ==UserScript==
+// ==Module==
 
 /**
  * Configuration module for VRCX-Extended

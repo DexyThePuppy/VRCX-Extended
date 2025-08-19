@@ -1,7 +1,7 @@
-// ==UserScript==
+// ==Module==
 // @name         VRCX-Extended Code Editor
 // @description  CodeMirror-based code editor for VRCX-Extended
-// ==UserScript==
+// ==Module==
 
 /**
  * Code editor module for VRCX-Extended
@@ -270,24 +270,42 @@ window.VRCXExtended.Editor = {
     this.closeEditor();
     window.VRCXExtended.PopupManager.renderCurrentSection();
     
-    utils.showNotification(`${isPlugin ? 'Plugin' : 'Theme'} saved successfully!`, 'success');
+    // Show save notification
+    const itemType = isPlugin ? 'Plugin' : 'Theme';
+    const actionText = item?.id ? 'updated' : 'created';
+    utils.showSuccessNotification(`${itemType} <strong>${utils.escapeHtml(name)}</strong> ${actionText} successfully!`);
   },
 
   /**
    * Close the editor modal
    */
   closeEditor() {
+    // Dispose of CodeMirror instance properly
     if (this.currentEditor) {
       try {
+        // Remove all event listeners
+        this.currentEditor.off();
+        // Convert back to textarea and remove
         this.currentEditor.toTextArea();
+        this.currentEditor = null;
       } catch (e) {
         console.warn('Error disposing CodeMirror:', e);
+        this.currentEditor = null;
       }
-      this.currentEditor = null;
     }
     
     const root = document.getElementById('modalRoot');
-    root.style.display = 'none';
-    root.innerHTML = '';
+    if (root) {
+      // Remove all event listeners from the modal content before clearing
+      const modal = root.querySelector('.modal');
+      if (modal) {
+        // Clone the modal to remove all event listeners
+        const clonedModal = modal.cloneNode(true);
+        root.innerHTML = '';
+      } else {
+        root.innerHTML = '';
+      }
+      root.style.display = 'none';
+    }
   }
 };

@@ -1,7 +1,7 @@
-// ==UserScript==
+// ==Module==
 // @name         VRCX-Extended Utilities
 // @description  Utility functions for VRCX-Extended
-// ==UserScript==
+// ==Module==
 
 /**
  * Utility functions module for VRCX-Extended
@@ -61,19 +61,153 @@ window.VRCXExtended.Utils = {
   },
 
   /**
-   * Show notification to user
+   * Show notification using VRCX's native Noty system
    * @param {string} message - Notification message
-   * @param {string} type - Notification type (info, success, error)
+   * @param {string} type - Notification type (info, success, error, warning)
+   * @param {number} timeout - Auto-close timeout in milliseconds (optional)
    */
-  showNotification(message, type = 'info') {
+  showNotification(message, type = 'info', timeout = null) {
+    // Check if we're in VRCX environment with Noty available
+    if (typeof window.Noty !== 'undefined') {
+      const notyType = type === 'error' ? 'error' : 
+                      type === 'success' ? 'success' : 
+                      type === 'warning' ? 'warning' : 'info';
+      
+      const notyTimeout = timeout !== null ? timeout : 
+                         type === 'error' ? 6000 : 
+                         type === 'warning' ? 5000 : 4000;
+
+      new window.Noty({
+        type: notyType,
+        text: message,
+        timeout: notyTimeout,
+        layout: 'bottomLeft',
+        theme: 'mint'
+      }).show();
+      
+      return;
+    }
+    
+    // Fallback for non-VRCX environments (like popup window)
+    this.showFallbackNotification(message, type, timeout);
+  },
+
+  /**
+   * Show success notification with VRCX Noty
+   * @param {string} message - Success message
+   * @param {number} timeout - Auto-close timeout (default: 4000ms)
+   */
+  showSuccessNotification(message, timeout = 4000) {
+    if (typeof window.Noty !== 'undefined') {
+      new window.Noty({
+        type: 'success',
+        text: message,
+        timeout: timeout,
+        layout: 'bottomLeft',
+        theme: 'mint'
+      }).show();
+    } else {
+      this.showFallbackNotification(message, 'success', timeout);
+    }
+  },
+
+  /**
+   * Show error notification with VRCX Noty
+   * @param {string} message - Error message
+   * @param {number} timeout - Auto-close timeout (default: 6000ms)
+   */
+  showErrorNotification(message, timeout = 6000) {
+    if (typeof window.Noty !== 'undefined') {
+      new window.Noty({
+        type: 'error',
+        text: message,
+        timeout: timeout,
+        layout: 'bottomLeft',
+        theme: 'mint'
+      }).show();
+    } else {
+      this.showFallbackNotification(message, 'error', timeout);
+    }
+  },
+
+  /**
+   * Show loading notification with spinner (non-auto-closing)
+   * @param {string} message - Loading message
+   * @returns {Object|null} Noty instance for later updating/closing
+   */
+  showLoadingNotification(message) {
+    if (typeof window.Noty !== 'undefined') {
+      return new window.Noty({
+        type: 'info',
+        text: `<i class="fa fa-spinner fa-spin"></i> ${message}`,
+        timeout: false,
+        closeWith: [],
+        layout: 'bottomLeft',
+        theme: 'mint'
+      }).show();
+    } else {
+      // Fallback - show info notification that auto-closes
+      this.showFallbackNotification(`⏳ ${message}`, 'info', false);
+      return null;
+    }
+  },
+
+  /**
+   * Update/close a loading notification
+   * @param {Object} notyInstance - Noty instance from showLoadingNotification
+   * @param {string} message - Completion message
+   * @param {string} type - Result type (success, error, warning)
+   */
+  updateLoadingNotification(notyInstance, message, type = 'success') {
+    if (notyInstance && typeof notyInstance.close === 'function') {
+      notyInstance.close();
+    }
+    
+    // Show completion notification
+    this.showNotification(message, type);
+  },
+
+  /**
+   * Show plugin/theme toggle notification
+   * @param {string} itemName - Plugin or theme name
+   * @param {string} itemType - 'Plugin' or 'Theme'
+   * @param {boolean} isEnabled - Whether item was enabled or disabled
+   * @param {boolean} isSuccess - Whether the operation was successful
+   */
+  showToggleNotification(itemName, itemType, isEnabled, isSuccess = true) {
+    const action = isEnabled ? 'enabled' : 'disabled';
+    const message = isSuccess 
+      ? `${itemType} <strong>${this.escapeHtml(itemName)}</strong> ${action}` 
+      : `Failed to ${action.slice(0, -1)} ${itemType.toLowerCase()} <strong>${this.escapeHtml(itemName)}</strong>`;
+    
+    const type = isSuccess ? 'success' : 'error';
+    this.showNotification(message, type, 4000);
+  },
+
+  /**
+   * Fallback notification system for non-VRCX environments
+   * @param {string} message - Notification message
+   * @param {string} type - Notification type
+   * @param {number|false} timeout - Timeout or false for no auto-close
+   */
+  showFallbackNotification(message, type = 'info', timeout = 4000) {
+    // Limit concurrent notifications to prevent DOM bloat
+    const existingNotifications = document.querySelectorAll('[data-vrcx-notification]');
+    if (existingNotifications.length >= 3) {
+      existingNotifications[0].remove();
+    }
+
     const notification = document.createElement('div');
+    notification.setAttribute('data-vrcx-notification', 'true');
+    
     const bgColor = type === 'error' ? 'var(--red-2, #f56c6c)' : 
                    type === 'success' ? 'var(--green-2, #67c23a)' : 
+                   type === 'warning' ? 'var(--yellow-2, #e6a23c)' :
                    'var(--accent-1, #66b1ff)';
     
     notification.style.cssText = `
       position: fixed;
-      top: 24px;
+      top: ${24 + (existingNotifications.length * 80)}px;
       right: 24px;
       padding: 16px 20px;
       background: ${bgColor};
@@ -90,36 +224,70 @@ window.VRCXExtended.Utils = {
       backdrop-filter: blur(10px);
     `;
     
-    // Add slide-in animation
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes slideInNotification {
-        from { 
-          transform: translateX(100%) scale(0.9); 
-          opacity: 0; 
+    // Add slide-in animation (only once)
+    if (!document.getElementById('vrcx-notification-styles')) {
+      const style = document.createElement('style');
+      style.id = 'vrcx-notification-styles';
+      style.textContent = `
+        @keyframes slideInNotification {
+          from { 
+            transform: translateX(100%) scale(0.9); 
+            opacity: 0; 
+          }
+          to { 
+            transform: translateX(0) scale(1); 
+            opacity: 1; 
+          }
         }
-        to { 
-          transform: translateX(0) scale(1); 
-          opacity: 1; 
-        }
-      }
-    `;
-    document.head.appendChild(style);
+      `;
+      document.head.appendChild(style);
+    }
     
-    notification.textContent = message;
+    notification.innerHTML = message; // Use innerHTML to support HTML content
     document.body.appendChild(notification);
     
-    // Auto-remove after 4 seconds
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.style.opacity = '0';
-        notification.style.transform = 'translateX(100%) scale(0.9)';
-        setTimeout(() => {
-          notification.remove();
-          if (style.parentNode) style.remove();
-        }, 300);
-      }
-    }, 4000);
+    // Auto-remove setup
+    if (timeout !== false) {
+      const cleanup = () => {
+        if (notification.parentNode) {
+          notification.style.opacity = '0';
+          notification.style.transform = 'translateX(100%) scale(0.9)';
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.remove();
+            }
+            
+            // Reposition remaining notifications
+            const remainingNotifications = document.querySelectorAll('[data-vrcx-notification]');
+            remainingNotifications.forEach((notif, index) => {
+              notif.style.top = `${24 + (index * 80)}px`;
+            });
+          }, 300);
+        }
+      };
+      
+      const timeoutId = setTimeout(cleanup, timeout);
+      
+      // Allow manual dismissal
+      notification.addEventListener('click', () => {
+        clearTimeout(timeoutId);
+        cleanup();
+      });
+      
+      notification.style.cursor = 'pointer';
+      notification.title = 'Click to dismiss';
+    }
+  },
+
+  /**
+   * Escape HTML to prevent XSS
+   * @param {string} text - Text to escape
+   * @returns {string} Escaped text
+   */
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   },
 
   /**

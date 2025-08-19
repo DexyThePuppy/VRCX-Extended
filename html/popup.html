@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>VRCX-Extended</title>
+
+  <!-- Element-UI stylesheet for native look (CSS only; we don't use Vue JS) -->
+  <link rel="stylesheet" href="{{ELEMENT_UI_CSS}}">
+
+  <!-- CodeMirror -->
+  <link rel="stylesheet" href="{{CODEMIRROR_CSS}}">
+  
+  <script src="{{CODEMIRROR_JS}}"></script>
+  <script src="{{CODEMIRROR_CSS_MODE}}"></script>
+  <script src="{{CODEMIRROR_JS_MODE}}"></script>
+  <script src="{{CODEMIRROR_CLOSEBRACKETS}}"></script>
+  <script src="{{CODEMIRROR_CLOSETAG}}"></script>
+  <script src="{{CODEMIRROR_MATCHBRACKETS}}"></script>
+  <script src="{{CODEMIRROR_ACTIVELINE}}"></script>
+
+  <!-- VRCX-Extended Styles -->
+  <link rel="stylesheet" href="{{VRCX_EXTENDED_CSS}}">
+</head>
+<body class="x-container theme-{{DEFAULT_THEME}}">
+  <!-- Hidden toolbar -->
+  <div class="toolbar" style="display: none;">
+    <button id="refreshAll" class="el-button"><i class="el-icon-refresh"></i> Reload All</button>
+    <div class="spacer"></div>
+    <span class="muted">VRCX-Extended</span>
+  </div>
+
+  <div class="mods-layout">
+    <aside class="sidebar">
+      <div class="menu-item active" data-section="plugins"><i class="el-icon-document"></i> Plugins</div>
+      <div class="menu-item" data-section="themes"><i class="el-icon-brush"></i> Themes</div>
+      <div class="menu-item" data-section="settings"><i class="el-icon-setting"></i> Settings</div>
+    </aside>
+
+    <section class="content">
+      <div class="content-header">
+        <div class="title"><strong id="sectionTitle">Plugins</strong></div>
+        <div>
+          <button id="createBtn" class="btn primary"><i class="el-icon-plus"></i> Create New</button>
+        </div>
+      </div>
+      <div id="list" class="content-list"></div>
+    </section>
+  </div>
+
+  <!-- Modal root -->
+  <div id="modalRoot" style="display:none;"></div>
+
+  <!-- VRCX-Extended JavaScript will be injected here -->
+  <script id="vrcx-extended-script">
+    {{VRCX_EXTENDED_SCRIPT}}
+  </script>
+
+</body>
+</html>

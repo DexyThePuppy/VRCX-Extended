@@ -1,7 +1,7 @@
-// ==UserScript==
+// ==Module==
 // @name         VRCX-Extended UI Components
 // @description  UI rendering and management for VRCX-Extended
-// ==UserScript==
+// ==Module==
 
 /**
  * UI components and rendering system for VRCX-Extended
@@ -57,21 +57,26 @@ window.VRCXExtended.UI = {
   renderList(data, section, listElement) {
     const utils = window.VRCXExtended.Utils;
     
-    listElement.innerHTML = '';
+    // Use DocumentFragment to batch DOM operations
+    const fragment = document.createDocumentFragment();
     const sortedData = data.slice().sort(utils.sortByUpdated);
 
     if (!sortedData.length) {
       const empty = document.createElement('div');
       empty.className = 'muted';
       empty.textContent = 'No items yet. Click Create to add your first one.';
-      listElement.appendChild(empty);
-      return;
+      fragment.appendChild(empty);
+    } else {
+      // Batch create all cards
+      sortedData.forEach(item => {
+        const card = this.createItemCard(item, section);
+        fragment.appendChild(card);
+      });
     }
 
-    sortedData.forEach(item => {
-      const card = this.createItemCard(item, section);
-      listElement.appendChild(card);
-    });
+    // Single DOM update - much faster than individual appendChild calls
+    listElement.innerHTML = '';
+    listElement.appendChild(fragment);
   },
 
   /**
@@ -169,12 +174,26 @@ window.VRCXExtended.UI = {
           // Refresh the view and apply changes
           window.VRCXExtended.PopupManager.renderCurrentSection();
           
-          if (section === 'plugins' && window.opener?.$app?.refreshVrcxPlugins) {
-            window.opener.$app.refreshVrcxPlugins();
+          let refreshSuccess = true;
+          try {
+            if (section === 'plugins' && window.opener?.$app?.refreshVrcxPlugins) {
+              window.opener.$app.refreshVrcxPlugins();
+            }
+            if (section === 'themes' && window.opener?.$app?.refreshVrcxThemes) {
+              window.opener.$app.refreshVrcxThemes();
+            }
+          } catch (refreshError) {
+            console.warn('Failed to refresh after deletion:', refreshError);
+            refreshSuccess = false;
           }
-          if (section === 'themes' && window.opener?.$app?.refreshVrcxThemes) {
-            window.opener.$app.refreshVrcxThemes();
-          }
+          
+          // Show deletion notification
+          const itemType = section === 'plugins' ? 'Plugin' : 'Theme';
+          const message = refreshSuccess 
+            ? `${itemType} <strong>${utils.escapeHtml(item.name)}</strong> deleted successfully`
+            : `${itemType} <strong>${utils.escapeHtml(item.name)}</strong> deleted (refresh may be needed)`;
+          
+          utils.showNotification(message, refreshSuccess ? 'success' : 'warning');
         }
       }
     });
@@ -231,12 +250,22 @@ window.VRCXExtended.UI = {
         utils.writeJSON(storageKey, allItems);
         
         // Apply immediately
-        if (section === 'plugins' && window.opener?.$app?.refreshVrcxPlugins) {
-          window.opener.$app.refreshVrcxPlugins();
+        let applySuccess = true;
+        try {
+          if (section === 'plugins' && window.opener?.$app?.refreshVrcxPlugins) {
+            window.opener.$app.refreshVrcxPlugins();
+          }
+          if (section === 'themes' && window.opener?.$app?.refreshVrcxThemes) {
+            window.opener.$app.refreshVrcxThemes();
+          }
+        } catch (applyError) {
+          console.warn('Failed to apply changes:', applyError);
+          applySuccess = false;
         }
-        if (section === 'themes' && window.opener?.$app?.refreshVrcxThemes) {
-          window.opener.$app.refreshVrcxThemes();
-        }
+        
+        // Show toggle notification
+        const itemType = section === 'plugins' ? 'Plugin' : 'Theme';
+        utils.showToggleNotification(item.name, itemType, checkbox.checked, applySuccess);
       }
     });
 
@@ -250,7 +279,8 @@ window.VRCXExtended.UI = {
   renderSettings(listElement) {
     const utils = window.VRCXExtended.Utils;
     
-    listElement.innerHTML = '';
+    // Use DocumentFragment for efficient DOM construction
+    const fragment = document.createDocumentFragment();
     
     // Settings container with full width
     const settingsContainer = document.createElement('div');
@@ -296,20 +326,23 @@ window.VRCXExtended.UI = {
           window.opener.$app.refreshVrcxAll();
         }
         
-        utils.showNotification('All VRCX Mods data has been reset.', 'info');
+        utils.showSuccessNotification('All VRCX-Extended data has been reset successfully');
         
         // Refresh the current view if we're on plugins/themes
         window.VRCXExtended.PopupManager.renderCurrentSection();
       }
     });
     
+    // Build the DOM structure efficiently
     storageContent.appendChild(storageInfo);
     storageContent.appendChild(resetBtn);
-    
     storageCard.appendChild(storageTitle);
     storageCard.appendChild(storageContent);
-    
     settingsContainer.appendChild(storageCard);
-    listElement.appendChild(settingsContainer);
+    fragment.appendChild(settingsContainer);
+    
+    // Single DOM update
+    listElement.innerHTML = '';
+    listElement.appendChild(fragment);
   }
 };

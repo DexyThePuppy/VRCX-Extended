@@ -1,7 +1,7 @@
-// ==UserScript==
+// ==Module==
 // @name         VRCX-Extended Content Injection System
 // @description  Handles theme and plugin injection into VRCX
-// ==UserScript==
+// ==Module==
 
 /**
  * Content injection system for VRCX-Extended

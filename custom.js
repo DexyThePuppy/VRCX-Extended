@@ -1,278 +1,201 @@
-// ==UserScript==
+// ==Module==
 // @name         VRCX-Extended Modular Loader
 // @namespace    http://tampermonkey.net/
-// @version      5.0
-// @description  VRCX-Extended modular system - dynamically loads modules from GitHub
+// @version      5.1
+// @description  VRCX-Extended modular system - minimal loader for future-proofing
 // @author       AI
 // @match        *://*/*
 // @grant        none
-// ==UserScript==
+// ==Module==
 
 /**
- * Main entry point for VRCX-Extended
- * Dynamically loads all modules and orchestrates initialization
+ * Minimal VRCX-Extended Loader
+ * Loads the module system and then delegates all advanced functionality to modules
  */
 (function() {
     'use strict';
 
     // System information
     const SYSTEM_INFO = {
-        version: '5.0',
+        version: '5.1',
         loadedAt: new Date().toISOString(),
         userAgent: navigator.userAgent,
         url: window.location.href
     };
 
-    console.log('🚀 VRCX-Extended Modular Loader v' + SYSTEM_INFO.version);
+    console.log('🚀 VRCX-Extended Minimal Loader v' + SYSTEM_INFO.version);
     console.log('📅 Loaded at:', SYSTEM_INFO.loadedAt);
     console.log('🌐 URL:', SYSTEM_INFO.url);
 
-    // Module loading configuration
-    const MODULE_CONFIG = {
-        // Base URL for GitHub raw content
+    // Configuration
+    const CONFIG = {
         baseUrl: 'https://raw.githubusercontent.com/DexyThePuppy/VRCX-Extended/refs/heads/main/modules/',
-        
-        // Module load order (dependencies first)
-        modules: [
-            'config.js',
-            'utils.js',
-            'injection.js',
-            'ui.js',
-            'editor.js',
-            'popup.js'
-        ],
-        
-        // Timeout for module loading (ms)
+        moduleSystemFile: 'modules.js',
         timeout: 15000
     };
 
     /**
-     * Dynamically load a JavaScript file by fetching and executing
-     * @param {string} src - Source URL/path of the script
+     * Simple module loader - only used to load the module system
+     * @param {string} src - Source URL of the script
      * @returns {Promise} Promise that resolves when script is loaded
      */
-    async function loadScript(src) {
+    async function loadModuleSystem(src) {
         try {
-            // Check if already loaded
-            const existingScript = document.querySelector(`script[data-module-src="${src}"]`);
-            if (existingScript) {
-                console.log(`⚡ Module already loaded: ${src}`);
-                return;
-            }
-
-            console.log(`📡 Fetching module content: ${src}`);
+            console.log(`📡 Loading module system: ${src}`);
             
-            // Create fetch with timeout
-            const fetchWithTimeout = async (url, options, timeoutMs = 10000) => {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-                
-                try {
-                    const response = await fetch(url, {
-                        ...options,
-                        signal: controller.signal
-                    });
-                    clearTimeout(timeoutId);
-                    return response;
-                } catch (error) {
-                    clearTimeout(timeoutId);
-                    if (error.name === 'AbortError') {
-                        throw new Error(`Request timeout after ${timeoutMs}ms`);
-                    }
-                    throw error;
-                }
-            };
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
             
-            // Fetch the script content
-            const response = await fetchWithTimeout(src, {
+            const response = await fetch(src, {
                 mode: 'cors',
                 cache: 'no-cache',
+                signal: controller.signal,
                 headers: {
                     'Accept': 'text/plain, text/javascript, application/javascript, */*'
                 }
             });
-
+            
+            clearTimeout(timeoutId);
+            
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            const scriptContent = await response.text();
+            const content = await response.text();
             
-            if (!scriptContent.trim()) {
-                throw new Error('Empty script content');
+            if (!content.trim()) {
+                throw new Error('Empty module system content');
             }
 
-            // Create a script element with the fetched content
+            // Execute the module system
             const script = document.createElement('script');
             script.type = 'text/javascript';
-            script.setAttribute('data-module-src', src);
-            
-            // Add source mapping comment for debugging
-            const sourceMap = `\n//# sourceURL=${src}`;
-            script.textContent = scriptContent + sourceMap;
-
-            // Add to document head and execute
+            script.textContent = content + `\n//# sourceURL=${src}`;
             document.head.appendChild(script);
             
-            // Small delay to allow module to initialize
-            await new Promise(resolve => setTimeout(resolve, 50));
-            
-            console.log(`✓ Loaded and executed module: ${src}`);
+            console.log('✓ Module system loaded');
             
         } catch (error) {
-            console.error(`✗ Failed to load module: ${src}`, error.message);
-            throw new Error(`Failed to load ${src}: ${error.message}`);
-        }
-    }
-
-    /**
-     * Load all modules sequentially
-     * @returns {Promise} Promise that resolves when all modules are loaded
-     */
-    async function loadAllModules() {
-        console.log('🔄 Loading VRCX-Extended modules from GitHub...');
-        console.log(`📍 Base URL: ${MODULE_CONFIG.baseUrl}`);
-        
-        const loadedModules = [];
-        const failedModules = [];
-        
-        try {
-            // Load modules in order
-            for (const moduleName of MODULE_CONFIG.modules) {
-                const moduleUrl = MODULE_CONFIG.baseUrl + moduleName;
-                console.log(`📥 Loading module: ${moduleUrl}`);
-                
-                try {
-                    await loadScript(moduleUrl);
-                    loadedModules.push(moduleName);
-                    
-                    // Small delay between modules to ensure proper initialization
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    
-                } catch (moduleError) {
-                    console.warn(`⚠️ Failed to load module ${moduleName}:`, moduleError);
-                    failedModules.push(moduleName);
-                    
-                    // Continue loading other modules instead of failing completely
-                    continue;
-                }
-            }
-            
-            if (failedModules.length === 0) {
-                console.log('✅ All VRCX-Extended modules loaded successfully');
-            } else {
-                console.warn(`⚠️ Loaded ${loadedModules.length}/${MODULE_CONFIG.modules.length} modules. Failed: ${failedModules.join(', ')}`);
-            }
-            
-            return { success: failedModules.length === 0, loadedModules, failedModules };
-            
-        } catch (error) {
-            console.error('❌ Critical error during module loading:', error);
+            console.error('❌ Failed to load module system:', error);
             throw error;
         }
     }
 
     /**
-     * Validate that all required modules are available
-     * @returns {boolean} True if all modules are loaded
-     */
-    function validateModules() {
-        if (!window.VRCXExtended) {
-            console.error('❌ VRCXExtended namespace not found');
-            return false;
-        }
-
-        const { Config, Utils, Injection, UI, Editor, Popup } = window.VRCXExtended;
-        const requiredModules = { Config, Utils, Injection, UI, Popup };
-        
-        const missingModules = Object.entries(requiredModules)
-            .filter(([name, module]) => !module)
-            .map(([name]) => name);
-
-        if (missingModules.length > 0) {
-            console.error('❌ Missing VRCX-Extended modules:', missingModules.join(', '));
-            return false;
-        }
-
-        console.log('✅ All required modules validated');
-        return true;
-    }
-
-    /**
-     * Initialize VRCX-Extended system
-     */
-    function initializeSystem() {
-        if (!validateModules()) {
-            return;
-        }
-
-        const { Config, Utils, Injection, UI } = window.VRCXExtended;
-
-        try {
-            console.log('🚀 Initializing VRCX-Extended system...');
-            
-            // 1. Initialize injection system (sets up API and applies existing content)
-            Injection.init();
-            console.log('✓ Injection system initialized');
-            
-            // 2. Initialize UI and menu integration
-            UI.initMenuIntegration();
-            console.log('✓ UI system initialized');
-            
-            // Log successful initialization
-            Utils.safeConsoleLog('log', '🎉 VRCX-Extended initialized successfully');
-            Utils.safeConsoleLog('info', 'All modules loaded and system is ready');
-            
-        } catch (error) {
-            console.error('❌ VRCX-Extended initialization failed:', error);
-        }
-    }
-
-    /**
-     * Main initialization sequence
+     * Main initialization with retry logic
      */
     async function main() {
         try {
-            // Wait for DOM to be ready
+            // Wait for DOM
             if (document.readyState === 'loading') {
                 await new Promise(resolve => {
                     document.addEventListener('DOMContentLoaded', resolve);
                 });
             }
 
-            console.log('📦 Starting VRCX-Extended Modular System...');
+            console.log('📦 Starting VRCX-Extended...');
             
-            // Load all modules
-            const loadResult = await loadAllModules();
+            // Load module system with retries
+            let retryCount = 0;
+            const maxRetries = 2;
             
-            if (!loadResult.success) {
-                console.warn(`⚠️ Some modules failed to load. Attempting to continue with available modules...`);
+            while (retryCount <= maxRetries) {
+                try {
+                    await loadModuleSystem(CONFIG.baseUrl + CONFIG.moduleSystemFile);
+                    break;
+                } catch (loadError) {
+                    retryCount++;
+                    if (retryCount <= maxRetries) {
+                        console.warn(`⚠️ Module system load attempt ${retryCount} failed, retrying...`);
+                        await new Promise(resolve => setTimeout(resolve, retryCount * 1000));
+                    } else {
+                        throw new Error(`Module system failed after ${maxRetries} retries: ${loadError.message}`);
+                    }
+                }
+            }
+
+            // Check if module system loaded
+            if (!window.VRCXExtended?.ModuleSystem) {
+                throw new Error('Module system not available after loading');
+            }
+
+            console.log('✓ Module system ready');
+            
+            // Small delay for initialization
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            // Delegate to module system for advanced loading
+            const moduleSystem = window.VRCXExtended.ModuleSystem;
+            const loadResult = await moduleSystem.loadAllModules();
+            
+            // Check for critical failures
+            if (loadResult.criticalFailures && loadResult.criticalFailures.length > 0) {
+                throw new Error(`Critical modules failed: ${loadResult.criticalFailures.join(', ')}`);
             }
             
-            // Small delay to ensure modules are fully initialized
-            await new Promise(resolve => setTimeout(resolve, 200));
-            
             // Initialize the system
-            initializeSystem();
+            await new Promise(resolve => setTimeout(resolve, 200));
+            const initSuccess = await moduleSystem.initializeSystem();
+            
+            if (!initSuccess) {
+                console.warn('⚠️ System initialization had issues, but may still function');
+                if (typeof window.Noty !== 'undefined') {
+                    new window.Noty({
+                        type: 'warning',
+                        text: '⚠️ VRCX-Extended loaded with some issues',
+                        timeout: 5000,
+                        layout: 'bottomLeft',
+                        theme: 'mint'
+                    }).show();
+                }
+            }
             
         } catch (error) {
             console.error('❌ VRCX-Extended startup failed:', error);
             
-            // Fallback: show user-friendly error
-            if (typeof alert !== 'undefined') {
-                alert('VRCX-Extended failed to load. Please check the console for details.');
+            // Show error notification
+            if (typeof window.Noty !== 'undefined') {
+                new window.Noty({
+                    type: 'error',
+                    text: `❌ VRCX-Extended failed to load: ${error.message}`,
+                    timeout: 8000,
+                    layout: 'bottomLeft',
+                    theme: 'mint',
+                    closeWith: ['click', 'button'],
+                    buttons: [
+                        window.Noty.button('Troubleshoot', 'btn btn-primary btn-sm', function() {
+                            const userMessage = `VRCX-Extended failed to load.
+
+Error: ${error.message}
+
+Troubleshooting:
+1. Check your internet connection
+2. Refresh the page and try again
+3. Check browser console for detailed errors
+4. Disable other userscripts temporarily
+
+If the problem persists, please report this issue with the error details from the console.`;
+                            
+                            alert(userMessage);
+                            this.close();
+                        })
+                    ]
+                }).show();
+            } else {
+                // Fallback alert
+                alert(`VRCX-Extended failed to load: ${error.message}\n\nCheck the console for details.`);
             }
         }
     }
 
     /**
-     * Timeout wrapper for module loading
+     * Initialize with timeout protection
      */
-    function mainWithTimeout() {
+    function init() {
         const timeoutPromise = new Promise((_, reject) => {
             setTimeout(() => {
-                reject(new Error(`Module loading timed out after ${MODULE_CONFIG.timeout}ms`));
-            }, MODULE_CONFIG.timeout);
+                reject(new Error(`Startup timed out after ${CONFIG.timeout}ms`));
+            }, CONFIG.timeout);
         });
 
         Promise.race([main(), timeoutPromise]).catch(error => {
@@ -280,7 +203,7 @@
         });
     }
 
-    // Start the initialization process
-    mainWithTimeout();
+    // Start the system
+    init();
 
 })();
