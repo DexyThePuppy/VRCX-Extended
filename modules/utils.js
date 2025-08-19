@@ -68,7 +68,11 @@ window.VRCXExtended.Utils = {
    */
   showNotification(message, type = 'info', timeout = null) {
     // Check if we're in VRCX environment with Noty available
-    if (typeof window.Noty !== 'undefined') {
+    // VRCX uses Noty directly, not window.Noty
+    const NotyClass = (typeof Noty !== 'undefined') ? Noty : 
+                      (typeof window.Noty !== 'undefined') ? window.Noty : null;
+    
+    if (NotyClass) {
       const notyType = type === 'error' ? 'error' : 
                       type === 'success' ? 'success' : 
                       type === 'warning' ? 'warning' : 'info';
@@ -77,7 +81,7 @@ window.VRCXExtended.Utils = {
                          type === 'error' ? 6000 : 
                          type === 'warning' ? 5000 : 4000;
 
-      new window.Noty({
+      new NotyClass({
         type: notyType,
         text: message,
         timeout: notyTimeout,
@@ -98,8 +102,11 @@ window.VRCXExtended.Utils = {
    * @param {number} timeout - Auto-close timeout (default: 4000ms)
    */
   showSuccessNotification(message, timeout = 4000) {
-    if (typeof window.Noty !== 'undefined') {
-      new window.Noty({
+    const NotyClass = (typeof Noty !== 'undefined') ? Noty : 
+                      (typeof window.Noty !== 'undefined') ? window.Noty : null;
+    
+    if (NotyClass) {
+      new NotyClass({
         type: 'success',
         text: message,
         timeout: timeout,
@@ -117,8 +124,11 @@ window.VRCXExtended.Utils = {
    * @param {number} timeout - Auto-close timeout (default: 6000ms)
    */
   showErrorNotification(message, timeout = 6000) {
-    if (typeof window.Noty !== 'undefined') {
-      new window.Noty({
+    const NotyClass = (typeof Noty !== 'undefined') ? Noty : 
+                      (typeof window.Noty !== 'undefined') ? window.Noty : null;
+    
+    if (NotyClass) {
+      new NotyClass({
         type: 'error',
         text: message,
         timeout: timeout,
@@ -136,8 +146,11 @@ window.VRCXExtended.Utils = {
    * @returns {Object|null} Noty instance for later updating/closing
    */
   showLoadingNotification(message) {
-    if (typeof window.Noty !== 'undefined') {
-      return new window.Noty({
+    const NotyClass = (typeof Noty !== 'undefined') ? Noty : 
+                      (typeof window.Noty !== 'undefined') ? window.Noty : null;
+    
+    if (NotyClass) {
+      return new NotyClass({
         type: 'info',
         text: `<i class="fa fa-spinner fa-spin"></i> ${message}`,
         timeout: false,

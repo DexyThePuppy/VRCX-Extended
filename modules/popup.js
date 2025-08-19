@@ -38,8 +38,8 @@ window.VRCXExtended.Popup = {
       }
 
       const html = this.processHTML(this.externalResources.html, this.externalResources.css);
-      win.document.write(html);
-      win.document.close();
+    win.document.write(html);
+    win.document.close();
     } catch (error) {
       console.error('❌ Failed to build popup window:', error);
       // Fallback to basic HTML
