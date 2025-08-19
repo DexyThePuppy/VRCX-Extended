@@ -1,6 +1,11 @@
 // ==UserScript==
-// @name         VRCX-Extended Main
-// @description  Main orchestrator for VRCX-Extended modular system
+// @name         VRCX-Extended Modular Loader
+// @namespace    http://tampermonkey.net/
+// @version      5.0
+// @description  VRCX-Extended modular system - dynamically loads modules from GitHub
+// @author       AI
+// @match        *://*/*
+// @grant        none
 // ==UserScript==
 
 /**
@@ -10,10 +15,22 @@
 (function() {
     'use strict';
 
+    // System information
+    const SYSTEM_INFO = {
+        version: '5.0',
+        loadedAt: new Date().toISOString(),
+        userAgent: navigator.userAgent,
+        url: window.location.href
+    };
+
+    console.log('🚀 VRCX-Extended Modular Loader v' + SYSTEM_INFO.version);
+    console.log('📅 Loaded at:', SYSTEM_INFO.loadedAt);
+    console.log('🌐 URL:', SYSTEM_INFO.url);
+
     // Module loading configuration
     const MODULE_CONFIG = {
-        // Base path for modules (relative to this script)
-        basePath: '',
+        // Base URL for GitHub raw content
+        baseUrl: 'https://raw.githubusercontent.com/DexyThePuppy/VRCX-Extended/refs/heads/main/modules/',
         
         // Module load order (dependencies first)
         modules: [
@@ -26,7 +43,7 @@
         ],
         
         // Timeout for module loading (ms)
-        timeout: 10000
+        timeout: 15000
     };
 
     /**
@@ -39,6 +56,7 @@
             // Check if already loaded
             const existingScript = document.querySelector(`script[src="${src}"]`);
             if (existingScript) {
+                console.log(`⚡ Module already loaded: ${src}`);
                 resolve();
                 return;
             }
@@ -46,13 +64,23 @@
             const script = document.createElement('script');
             script.src = src;
             script.type = 'text/javascript';
+            script.crossOrigin = 'anonymous'; // Allow cross-origin loading
+            
+            // Set timeout for individual script loading
+            const timeout = setTimeout(() => {
+                script.remove();
+                reject(new Error(`Timeout loading ${src}`));
+            }, 10000);
             
             script.onload = () => {
+                clearTimeout(timeout);
                 console.log(`✓ Loaded module: ${src}`);
                 resolve();
             };
             
             script.onerror = (error) => {
+                clearTimeout(timeout);
+                script.remove();
                 console.error(`✗ Failed to load module: ${src}`, error);
                 reject(new Error(`Failed to load ${src}`));
             };
@@ -67,23 +95,44 @@
      * @returns {Promise} Promise that resolves when all modules are loaded
      */
     async function loadAllModules() {
-        console.log('🔄 Loading VRCX-Extended modules...');
+        console.log('🔄 Loading VRCX-Extended modules from GitHub...');
+        console.log(`📍 Base URL: ${MODULE_CONFIG.baseUrl}`);
+        
+        const loadedModules = [];
+        const failedModules = [];
         
         try {
             // Load modules in order
             for (const moduleName of MODULE_CONFIG.modules) {
-                const modulePath = MODULE_CONFIG.basePath + moduleName;
-                await loadScript(modulePath);
+                const moduleUrl = MODULE_CONFIG.baseUrl + moduleName;
+                console.log(`📥 Loading module: ${moduleUrl}`);
                 
-                // Small delay between modules to ensure proper initialization
-                await new Promise(resolve => setTimeout(resolve, 50));
+                try {
+                    await loadScript(moduleUrl);
+                    loadedModules.push(moduleName);
+                    
+                    // Small delay between modules to ensure proper initialization
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                } catch (moduleError) {
+                    console.warn(`⚠️ Failed to load module ${moduleName}:`, moduleError);
+                    failedModules.push(moduleName);
+                    
+                    // Continue loading other modules instead of failing completely
+                    continue;
+                }
             }
             
-            console.log('✅ All VRCX-Extended modules loaded successfully');
-            return true;
+            if (failedModules.length === 0) {
+                console.log('✅ All VRCX-Extended modules loaded successfully');
+            } else {
+                console.warn(`⚠️ Loaded ${loadedModules.length}/${MODULE_CONFIG.modules.length} modules. Failed: ${failedModules.join(', ')}`);
+            }
+            
+            return { success: failedModules.length === 0, loadedModules, failedModules };
             
         } catch (error) {
-            console.error('❌ Failed to load VRCX-Extended modules:', error);
+            console.error('❌ Critical error during module loading:', error);
             throw error;
         }
     }
@@ -159,10 +208,14 @@
             console.log('📦 Starting VRCX-Extended Modular System...');
             
             // Load all modules
-            await loadAllModules();
+            const loadResult = await loadAllModules();
+            
+            if (!loadResult.success) {
+                console.warn(`⚠️ Some modules failed to load. Attempting to continue with available modules...`);
+            }
             
             // Small delay to ensure modules are fully initialized
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise(resolve => setTimeout(resolve, 200));
             
             // Initialize the system
             initializeSystem();
