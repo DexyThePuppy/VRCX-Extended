@@ -610,6 +610,15 @@ window.VRCXExtended.Popup = {
 
         window.VRCXExtended.PopupManager.writeJSON(storageKey, data);
         
+        // Show notification for save action
+        if (window.opener?.VRCXExtended?.Utils?.showNotification) {
+          const itemType = isPlugin ? 'Plugin' : 'Theme';
+          const action = item?.id ? 'updated' : 'created';
+          const message = itemType + ' <strong>' + name + '</strong> ' + action + ' successfully';
+          window.opener.VRCXExtended.Utils.showNotification(message, 'success');
+        }
+        
+        // Refresh the opener window
         if (isPlugin && window.opener?.$app?.refreshVrcxPlugins) {
           window.opener.$app.refreshVrcxPlugins();
         }
@@ -617,8 +626,13 @@ window.VRCXExtended.Popup = {
           window.opener.$app.refreshVrcxThemes();
         }
 
+        // Close the modal first
         closeEditor();
-        window.VRCXExtended.PopupManager.renderCurrentSection();
+        
+        // Then refresh the current section
+        setTimeout(() => {
+          window.VRCXExtended.PopupManager.renderCurrentSection();
+        }, 100);
       });
       
       modal.addEventListener('keydown', (e) => {

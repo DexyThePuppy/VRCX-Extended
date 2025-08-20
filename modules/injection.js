@@ -61,6 +61,42 @@ window.VRCXExtended.Injection = {
   },
 
   /**
+   * Refresh themes only
+   */
+  refreshThemes() {
+    const config = window.VRCXExtended.Config;
+    const utils = window.VRCXExtended.Utils;
+    
+    const themes = utils.readJSON(config.KEYS.THEMES, []);
+    const injectedThemes = this.injectThemes(themes);
+    
+    // Show notification for theme refresh
+    if (injectedThemes.length > 0) {
+      this.showInjectionNotifications(injectedThemes, []);
+    }
+    
+    return injectedThemes;
+  },
+
+  /**
+   * Refresh plugins only
+   */
+  refreshPlugins() {
+    const config = window.VRCXExtended.Config;
+    const utils = window.VRCXExtended.Utils;
+    
+    const plugins = utils.readJSON(config.KEYS.PLUGINS, []);
+    const injectedPlugins = this.injectPlugins(plugins);
+    
+    // Show notification for plugin refresh
+    if (injectedPlugins.length > 0) {
+      this.showInjectionNotifications([], injectedPlugins);
+    }
+    
+    return injectedPlugins;
+  },
+
+  /**
    * Refresh all injected content (themes and plugins)
    */
   refreshAll() {
