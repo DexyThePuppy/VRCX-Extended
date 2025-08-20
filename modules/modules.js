@@ -442,6 +442,9 @@ window.VRCXExtended.ModuleSystem = {
         // Additional validation for Utils module functions
         if (Utils && typeof Utils.ensureNotyAvailable !== 'function') {
             console.warn('⚠️ Utils module loaded but ensureNotyAvailable function missing');
+            console.log('📋 Available Utils functions:', Object.keys(Utils).filter(key => typeof Utils[key] === 'function'));
+        } else if (Utils) {
+            console.log('✅ Utils.ensureNotyAvailable function is available');
         }
 
         console.log('✅ All required modules validated');
@@ -460,21 +463,46 @@ window.VRCXExtended.ModuleSystem = {
 
         try {
             console.log('🚀 Initializing VRCX-Extended system...');
+            console.log('🔍 Utils module debug info:', {
+                exists: !!Utils,
+                type: typeof Utils,
+                hasEnsureNotyAvailable: Utils && typeof Utils.ensureNotyAvailable === 'function',
+                availableFunctions: Utils ? Object.keys(Utils).filter(key => typeof Utils[key] === 'function') : []
+            });
             
             // 0. Ensure Noty is available for global use
+            console.log('📋 Step 0: Ensuring Noty library is available...');
             try {
+                console.log('📋 Checking if Noty is already available:', typeof Noty !== 'undefined');
+                
                 // Check if Utils.ensureNotyAvailable exists before calling it
                 if (Utils && typeof Utils.ensureNotyAvailable === 'function') {
+                    console.log('📋 Calling Utils.ensureNotyAvailable...');
                     await Utils.ensureNotyAvailable();
+                    console.log('📋 After ensureNotyAvailable, Noty status:', typeof Noty !== 'undefined');
                 } else {
+                    console.warn('⚠️ Utils.ensureNotyAvailable not available, checking for Noty directly');
+                    console.warn('⚠️ Utils exists:', !!Utils, 'ensureNotyAvailable type:', Utils ? typeof Utils.ensureNotyAvailable : 'Utils not available');
+                    
                     // Try to set up Noty if it's available but not detected properly
                     if (window.noty || window.Noty) {
                         window.Noty = window.Noty || window.noty;
+                        console.log('📋 Found existing Noty, setting up global reference');
+                    } else {
+                        console.log('📋 No existing Noty found in window.noty or window.Noty');
                     }
+                }
+                
+                if (typeof Noty !== 'undefined') {
+                    console.log('✓ Noty library ready for global use');
+                } else {
+                    console.warn('⚠️ Noty not available - notifications will use fallback');
                 }
             } catch (notyError) {
                 console.warn('⚠️ Could not load Noty library:', notyError.message);
+                console.warn('⚠️ Notifications will use fallback system');
             }
+            console.log('📋 Step 0 completed, moving to injection...');
             
             // 1. Initialize injection system (sets up API and applies existing content)
             try {
@@ -588,7 +616,7 @@ window.VRCXExtended.ModuleSystem = {
                         }).show();
                     }
                 }).catch(() => {
-                    // Noty not available, continue silently
+                    console.log('⏳ Loading VRCX-Extended modules... (Noty not available)');
                 });
             }
         }
