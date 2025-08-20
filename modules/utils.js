@@ -165,8 +165,8 @@ window.VRCXExtended.Utils = {
   showToggleNotification(itemName, itemType, isEnabled, isSuccess = true) {
     const action = isEnabled ? 'enabled' : 'disabled';
     const message = isSuccess 
-      ? `${itemType} <strong>${this.escapeHtml(itemName)}</strong> ${action}` 
-      : `Failed to ${action.slice(0, -1)} ${itemType.toLowerCase()} <strong>${this.escapeHtml(itemName)}</strong>`;
+      ? itemType + ' <strong>' + this.escapeHtml(itemName) + '</strong> ' + action
+      : 'Failed to ' + action.slice(0, -1) + ' ' + itemType.toLowerCase() + ' <strong>' + this.escapeHtml(itemName) + '</strong>';
     
     const type = isSuccess ? 'success' : 'error';
     const timeout = type === 'error' ? 6000 : 4000;

@@ -190,8 +190,8 @@ window.VRCXExtended.UI = {
           // Show deletion notification
           const itemType = section === 'plugins' ? 'Plugin' : 'Theme';
           const message = refreshSuccess 
-            ? `${itemType} <strong>${utils.escapeHtml(item.name)}</strong> deleted successfully`
-            : `${itemType} <strong>${utils.escapeHtml(item.name)}</strong> deleted (refresh may be needed)`;
+            ? itemType + ' <strong>' + utils.escapeHtml(item.name) + '</strong> deleted successfully'
+            : itemType + ' <strong>' + utils.escapeHtml(item.name) + '</strong> deleted (refresh may be needed)';
           
           utils.showNotification(message, refreshSuccess ? 'success' : 'warning');
         }
@@ -265,7 +265,10 @@ window.VRCXExtended.UI = {
         
         // Show toggle notification
         const itemType = section === 'plugins' ? 'Plugin' : 'Theme';
-        utils.showToggleNotification(item.name, itemType, checkbox.checked, applySuccess);
+        const action = checkbox.checked ? 'enabled' : 'disabled';
+        const message = itemType + ' <strong>' + item.name + '</strong> ' + action;
+        const type = applySuccess ? 'success' : 'error';
+        utils.showNotification(message, type);
       }
     });
 

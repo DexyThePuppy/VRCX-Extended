@@ -273,7 +273,7 @@ window.VRCXExtended.Editor = {
     // Show save notification
     const itemType = isPlugin ? 'Plugin' : 'Theme';
     const actionText = item?.id ? 'updated' : 'created';
-    utils.showSuccessNotification(`${itemType} <strong>${utils.escapeHtml(name)}</strong> ${actionText} successfully!`);
+    utils.showSuccessNotification(itemType + ' <strong>' + utils.escapeHtml(name) + '</strong> ' + actionText + ' successfully!');
   },
 
   /**
