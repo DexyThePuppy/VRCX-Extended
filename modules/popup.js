@@ -471,23 +471,31 @@ window.VRCXExtended.Popup = {
       const list = document.getElementById('list');
       
       try {
-        // Load plugins from JSON file
-        const response = await fetch('store/plugins/plugins.json');
-        const plugins = await response.json();
+        // Show loading state
+        list.innerHTML = '<div class="muted">Loading plugins from store...</div>';
+        
+        // Use the Store module to fetch data
+        const plugins = await window.VRCXExtended.Store.fetchStoreData('plugins');
         
         if (!plugins.length) {
           list.innerHTML = '<div class="muted">No plugins available in the store.</div>';
           return;
         }
         
-        plugins.forEach(plugin => {
+        // Sort by update date
+        const sortedPlugins = window.VRCXExtended.Store.sortByUpdated(plugins);
+        
+        // Clear loading state
+        list.innerHTML = '';
+        
+        sortedPlugins.forEach(plugin => {
           const card = this.createStoreCard(plugin, 'plugin');
           list.appendChild(card);
         });
         
       } catch (error) {
         console.error('Failed to load store plugins:', error);
-        list.innerHTML = '<div class="muted">Failed to load plugins from store.</div>';
+        list.innerHTML = '<div class="muted">Failed to load plugins from store. Please check your connection and try again.</div>';
       }
     },
 
@@ -495,23 +503,31 @@ window.VRCXExtended.Popup = {
       const list = document.getElementById('list');
       
       try {
-        // Load themes from JSON file
-        const response = await fetch('store/themes/themes.json');
-        const themes = await response.json();
+        // Show loading state
+        list.innerHTML = '<div class="muted">Loading themes from store...</div>';
+        
+        // Use the Store module to fetch data
+        const themes = await window.VRCXExtended.Store.fetchStoreData('themes');
         
         if (!themes.length) {
           list.innerHTML = '<div class="muted">No themes available in the store.</div>';
           return;
         }
         
-        themes.forEach(theme => {
+        // Sort by update date
+        const sortedThemes = window.VRCXExtended.Store.sortByUpdated(themes);
+        
+        // Clear loading state
+        list.innerHTML = '';
+        
+        sortedThemes.forEach(theme => {
           const card = this.createStoreCard(theme, 'theme');
           list.appendChild(card);
         });
         
       } catch (error) {
         console.error('Failed to load store themes:', error);
-        list.innerHTML = '<div class="muted">Failed to load themes from store.</div>';
+        list.innerHTML = '<div class="muted">Failed to load themes from store. Please check your connection and try again.</div>';
       }
     },
 

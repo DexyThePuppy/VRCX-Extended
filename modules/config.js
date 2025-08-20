@@ -24,7 +24,8 @@ window.VRCXExtended.Config = {
     localDebugPaths: {
       modules: 'file://vrcx/extended/modules',
       html: 'file://vrcx/extended/html', 
-      stylesheets: 'file://vrcx/extended/stylesheet'
+      stylesheets: 'file://vrcx/extended/stylesheet',
+      store: 'file://vrcx/extended/store'
     }
   },
 
@@ -61,6 +62,28 @@ window.VRCXExtended.Config = {
       CLOSETAG: 'https://unpkg.com/codemirror@5.65.16/addon/edit/closetag.js',
       MATCHBRACKETS: 'https://unpkg.com/codemirror@5.65.16/addon/edit/matchbrackets.js',
       ACTIVELINE: 'https://unpkg.com/codemirror@5.65.16/addon/selection/active-line.js'
+    }
+  },
+
+  // Store Configuration
+  STORE: {
+    // GitHub repository for store data
+    GITHUB: {
+      BASE_URL: 'https://raw.githubusercontent.com/DexyThePuppy/VRCX-Extended/main',
+      PLUGINS: 'https://raw.githubusercontent.com/DexyThePuppy/VRCX-Extended/main/store/plugins/plugins.json',
+      THEMES: 'https://raw.githubusercontent.com/DexyThePuppy/VRCX-Extended/main/store/themes/themes.json'
+    },
+    
+    // Local debug paths for development
+    LOCAL: {
+      PLUGINS: 'file://vrcx/extended/store/plugins/plugins.json',
+      THEMES: 'file://vrcx/extended/store/themes/themes.json'
+    },
+    
+    // Cache settings
+    CACHE: {
+      DURATION: 300000, // 5 minutes in milliseconds
+      KEY_PREFIX: 'vrcx_store_'
     }
   },
 
@@ -124,5 +147,97 @@ window.VRCXExtended.Config = {
    */
   setSetting(key, value) {
     this.updateSettings({ [key]: value });
+  },
+
+  /**
+   * Get store URL based on debug mode setting
+   * @param {string} type - 'plugins' or 'themes'
+   * @returns {string} URL for the store data
+   */
+  getStoreUrl(type) {
+    const settings = this.getSettings();
+    const isDebugMode = settings.debugMode || false;
+    
+    if (isDebugMode) {
+      return type === 'plugins' ? this.STORE.LOCAL.PLUGINS : this.STORE.LOCAL.THEMES;
+    } else {
+      return type === 'plugins' ? this.STORE.GITHUB.PLUGINS : this.STORE.GITHUB.THEMES;
+    }
+  },
+
+  /**
+   * Get store cache key for a specific type
+   * @param {string} type - 'plugins' or 'themes'
+   * @returns {string} Cache key
+   */
+  getStoreCacheKey(type) {
+    return this.STORE.CACHE.KEY_PREFIX + type;
+  },
+
+  /**
+   * Check if store cache is valid
+   * @param {string} type - 'plugins' or 'themes'
+   * @returns {boolean} True if cache is valid
+   */
+  isStoreCacheValid(type) {
+    const settings = this.getSettings();
+    if (settings.disableCache) return false;
+    
+    const cacheKey = this.getStoreCacheKey(type);
+    const cached = localStorage.getItem(cacheKey);
+    
+    if (!cached) return false;
+    
+    try {
+      const data = JSON.parse(cached);
+      const now = Date.now();
+      return data.timestamp && (now - data.timestamp) < this.STORE.CACHE.DURATION;
+    } catch {
+      return false;
+    }
+  },
+
+  /**
+   * Store data in cache
+   * @param {string} type - 'plugins' or 'themes'
+   * @param {Array} data - Data to cache
+   */
+  setStoreCache(type, data) {
+    const settings = this.getSettings();
+    if (settings.disableCache) return;
+    
+    const cacheKey = this.getStoreCacheKey(type);
+    const cacheData = {
+      data: data,
+      timestamp: Date.now()
+    };
+    
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+    } catch (error) {
+      console.warn('Failed to cache store data:', error);
+    }
+  },
+
+  /**
+   * Get data from cache
+   * @param {string} type - 'plugins' or 'themes'
+   * @returns {Array|null} Cached data or null if not found/invalid
+   */
+  getStoreCache(type) {
+    const settings = this.getSettings();
+    if (settings.disableCache) return null;
+    
+    const cacheKey = this.getStoreCacheKey(type);
+    const cached = localStorage.getItem(cacheKey);
+    
+    if (!cached) return null;
+    
+    try {
+      const data = JSON.parse(cached);
+      return data.data || null;
+    } catch {
+      return null;
+    }
   }
 };
