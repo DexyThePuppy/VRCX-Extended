@@ -147,12 +147,7 @@
                     }).show();
                 }
             } else {
-                // Verify Noty is available for global use
-                if (typeof Noty !== 'undefined') {
-                    console.log('🎯 Noty is now globally available - you can use: new Noty({type: "success", text: "Hello!"}).show()');
-                } else {
-                    console.log('⚠️ Noty not globally available - use VRCXExtended.Utils methods instead');
-                }
+                // System initialization completed successfully
             }
             
         } catch (error) {

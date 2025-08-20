@@ -293,6 +293,17 @@ window.VRCXExtended.Popup = {
           allItems[index].updatedAt = this.nowIso();
           this.writeJSON(storageKey, allItems);
           
+          // Show notification for toggle action
+          if (window.opener?.VRCXExtended?.Utils?.showToggleNotification) {
+            const itemType = section === 'plugins' ? 'Plugin' : 'Theme';
+            window.opener.VRCXExtended.Utils.showToggleNotification(
+              item.name, 
+              itemType, 
+              checkbox.checked, 
+              true
+            );
+          }
+          
           if (section === 'plugins' && window.opener?.$app?.refreshVrcxPlugins) {
             window.opener.$app.refreshVrcxPlugins();
           }
