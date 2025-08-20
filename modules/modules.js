@@ -26,6 +26,7 @@ window.VRCXExtended.ModuleSystem = {
         dependencyGroups: [
             ['config.js', 'utils.js'], // Core dependencies (parallel)
             ['injection.js'],           // Injection system
+            ['modal.js'],               // Modal system
             ['ui.js', 'editor.js'],    // UI components (parallel)
             ['popup.js']               // Popup (depends on all above)
         ],
@@ -63,6 +64,11 @@ window.VRCXExtended.ModuleSystem = {
      */
     getRepositoryConfig() {
         const isDebugMode = window.VRCXExtended?.Config?.getSetting?.('debugMode') || false;
+        
+        // Debug logging to understand what's happening
+        console.log('🔧 getRepositoryConfig() called - debug mode:', isDebugMode);
+        console.log('🔧 VRCXExtended.Config available:', !!window.VRCXExtended?.Config);
+        console.log('🔧 Config.getSetting available:', !!window.VRCXExtended?.Config?.getSetting);
         
         if (isDebugMode) {
             const localPaths = window.VRCXExtended?.Config?.getSetting?.('localDebugPaths') || {};
@@ -131,6 +137,13 @@ window.VRCXExtended.ModuleSystem = {
                 return null;
             }
 
+            // Check if debug mode is enabled - if so, never use cached GitHub files
+            const isDebugMode = window.VRCXExtended?.Config?.getSetting?.('debugMode') || false;
+            if (isDebugMode && src.includes('raw.githubusercontent.com')) {
+                console.log('🔧 Debug mode: Skipping cached GitHub file, will load from local:', src);
+                return null;
+            }
+
             const cacheKey = `vrcx_module_${btoa(src).replace(/[^a-zA-Z0-9]/g, '')}`;
             const cached = localStorage.getItem(cacheKey);
             
@@ -178,12 +191,38 @@ window.VRCXExtended.ModuleSystem = {
     },
 
     /**
-     * Load external resource (HTML/CSS) with caching
+     * Load external resource (HTML/CSS) with caching and debug mode fallback
      * @param {string} src - Source URL/path of the resource
      * @param {string} type - Resource type ('html' or 'css')
      * @returns {Promise<string>} Promise that resolves with resource content
      */
     async loadExternalResource(src, type) {
+        const isDebugMode = window.VRCXExtended?.Config?.getSetting?.('debugMode') || false;
+        let fallbackSrc = null;
+        
+        // If in debug mode and this is a GitHub URL, prepare fallback
+        if (isDebugMode && src.includes('raw.githubusercontent.com')) {
+            // Extract filename from GitHub URL
+            const filename = src.split('/').pop();
+            const localPaths = window.VRCXExtended?.Config?.getSetting?.('localDebugPaths') || {};
+            
+            if (type === 'html' && localPaths.html) {
+                fallbackSrc = `${localPaths.html}/${filename}`;
+            } else if (type === 'css' && localPaths.stylesheets) {
+                fallbackSrc = `${localPaths.stylesheets}/${filename}`;
+            }
+        }
+        
+        // If in debug mode and this is a local file, prepare GitHub fallback
+        if (isDebugMode && src.startsWith('file://')) {
+            const filename = src.split('/').pop();
+            if (type === 'html') {
+                fallbackSrc = `${this.config.repository.paths.html}/${filename}`;
+            } else if (type === 'css') {
+                fallbackSrc = `${this.config.repository.paths.stylesheets}/${filename}`;
+            }
+        }
+        
         try {
             // Try to get from cache first
             let content = this.getCachedModule(src);
@@ -242,17 +281,85 @@ window.VRCXExtended.ModuleSystem = {
             return content;
             
         } catch (error) {
+            // If we have a fallback source, try it
+            if (fallbackSrc) {
+                console.warn(`⚠️ Failed to load ${type} from ${src}, trying fallback: ${fallbackSrc}`);
+                console.warn(`Error: ${error.message}`);
+                
+                try {
+                    console.log(`📡 Fetching ${type} content from fallback: ${fallbackSrc}`);
+                    
+                    const response = await fetch(fallbackSrc, {
+                        mode: 'cors',
+                        cache: 'no-cache',
+                        headers: {
+                            'Accept': type === 'html' ? 'text/html, text/plain, */*' : 'text/css, text/plain, */*'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const content = await response.text();
+                    
+                    if (!content.trim()) {
+                        throw new Error(`Empty ${type} content from fallback`);
+                    }
+
+                    // Cache the fallback content
+                    this.cacheModule(fallbackSrc, content);
+                    
+                    console.log(`✓ Loaded ${type} from fallback: ${fallbackSrc}`);
+                    
+                    // Show notification about fallback
+                    if (window.VRCXExtended?.Utils?.showNotification) {
+                        const fallbackType = fallbackSrc.includes('raw.githubusercontent.com') ? 'GitHub' : 'local files';
+                        window.VRCXExtended.Utils.showNotification(
+                            `${type.toUpperCase()} loaded from ${fallbackType} fallback`, 
+                            'warning'
+                        );
+                    }
+                    
+                    return content;
+                    
+                } catch (fallbackError) {
+                    console.error(`✗ Failed to load ${type} from fallback: ${fallbackSrc}`, fallbackError.message);
+                    throw new Error(`Failed to load ${type} from both ${src} and fallback ${fallbackSrc}: ${error.message}`);
+                }
+            }
+            
             console.error(`✗ Failed to load ${type}: ${src}`, error.message);
             throw new Error(`Failed to load ${type} ${src}: ${error.message}`);
         }
     },
 
     /**
-     * Dynamically load a JavaScript file by fetching and executing
+     * Dynamically load a JavaScript file by fetching and executing with debug mode fallback
      * @param {string} src - Source URL/path of the script
      * @returns {Promise} Promise that resolves when script is loaded
      */
     async loadScript(src) {
+        const isDebugMode = window.VRCXExtended?.Config?.getSetting?.('debugMode') || false;
+        let fallbackSrc = null;
+        
+        // If in debug mode and this is a GitHub URL, prepare fallback
+        if (isDebugMode && src.includes('raw.githubusercontent.com')) {
+            // Extract filename from GitHub URL
+            const filename = src.split('/').pop();
+            const localPaths = window.VRCXExtended?.Config?.getSetting?.('localDebugPaths') || {};
+            
+            if (localPaths.modules) {
+                fallbackSrc = `${localPaths.modules}/${filename}`;
+            }
+        }
+        
+        // If in debug mode and this is a local file, prepare GitHub fallback
+        if (isDebugMode && src.startsWith('file://')) {
+            const filename = src.split('/').pop();
+            fallbackSrc = `${this.config.repository.paths.modules}/${filename}`;
+        }
+        
         try {
             // Check if already loaded
             const existingScript = document.querySelector(`script[data-module-src="${src}"]`);
@@ -331,6 +438,69 @@ window.VRCXExtended.ModuleSystem = {
             console.log(`✓ Loaded and executed module: ${src}`);
             
         } catch (error) {
+            // If we have a fallback source, try it
+            if (fallbackSrc) {
+                console.warn(`⚠️ Failed to load module from ${src}, trying fallback: ${fallbackSrc}`);
+                console.warn(`Error: ${error.message}`);
+                
+                try {
+                    console.log(`📡 Fetching module content from fallback: ${fallbackSrc}`);
+                    
+                    const response = await fetch(fallbackSrc, {
+                        mode: 'cors',
+                        cache: 'no-cache',
+                        headers: {
+                            'Accept': 'text/plain, text/javascript, application/javascript, */*'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const scriptContent = await response.text();
+                    
+                    if (!scriptContent.trim()) {
+                        throw new Error('Empty script content from fallback');
+                    }
+
+                    // Cache the fallback content
+                    this.cacheModule(fallbackSrc, scriptContent);
+
+                    // Create a script element with the fallback content
+                    const script = document.createElement('script');
+                    script.type = 'text/javascript';
+                    script.setAttribute('data-module-src', fallbackSrc);
+                    
+                    // Add source mapping comment for debugging
+                    const sourceMap = `\n//# sourceURL=${fallbackSrc}`;
+                    script.textContent = scriptContent + sourceMap;
+
+                    // Add to document head and execute
+                    document.head.appendChild(script);
+                    
+                    // Small delay to allow module to initialize
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                    
+                    console.log(`✓ Loaded and executed module from fallback: ${fallbackSrc}`);
+                    
+                    // Show notification about fallback
+                    if (window.VRCXExtended?.Utils?.showNotification) {
+                        const fallbackType = fallbackSrc.includes('raw.githubusercontent.com') ? 'GitHub' : 'local files';
+                        window.VRCXExtended.Utils.showNotification(
+                            `Module loaded from ${fallbackType} fallback`, 
+                            'warning'
+                        );
+                    }
+                    
+                    return;
+                    
+                } catch (fallbackError) {
+                    console.error(`✗ Failed to load module from fallback: ${fallbackSrc}`, fallbackError.message);
+                    throw new Error(`Failed to load module from both ${src} and fallback ${fallbackSrc}: ${error.message}`);
+                }
+            }
+            
             console.error(`✗ Failed to load module: ${src}`, error.message);
             throw new Error(`Failed to load ${src}: ${error.message}`);
         }

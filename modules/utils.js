@@ -35,8 +35,11 @@ window.VRCXExtended.Utils = {
   readJSON(key, fallback) {
     try {
       const value = localStorage.getItem(key);
-      return value ? JSON.parse(value) : fallback;
-    } catch {
+      const result = value ? JSON.parse(value) : fallback;
+      console.log('📖 Storage read for key:', key, 'count:', Array.isArray(result) ? result.length : 'non-array');
+      return result;
+    } catch (error) {
+      console.error('❌ Storage read failed for key:', key, error);
       return fallback;
     }
   },
@@ -47,7 +50,13 @@ window.VRCXExtended.Utils = {
    * @param {*} value - Value to store
    */
   writeJSON(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      console.log('✅ Storage write successful for key:', key, 'value count:', Array.isArray(value) ? value.length : 'non-array');
+    } catch (error) {
+      console.error('❌ Storage write failed for key:', key, error);
+      throw error;
+    }
   },
 
   /**
@@ -298,6 +307,9 @@ window.VRCXExtended.Utils = {
    * @returns {string} Escaped text
    */
   escapeHtml(text) {
+    if (text == null || text === undefined) {
+      return '';
+    }
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;

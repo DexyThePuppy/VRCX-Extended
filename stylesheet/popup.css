@@ -5,7 +5,7 @@
   /* Layout & Animation */
   --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
   --shadow-elevated: 0 4px 8px rgba(0,0,0,0.16), 0 2px 4px rgba(0,0,0,0.12);
-  --border-radius: 8px;
+  --border-radius: 6px;
   --border-radius-small: 4px;
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   
@@ -112,8 +112,8 @@ html, body {
   box-sizing: border-box;
   background: #1e1e1e;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.4;
   color: #ffffff;
 }
 
@@ -127,8 +127,8 @@ body.x-container {
   background: #1e1e1e;
   color: #ffffff; 
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 /* Hidden toolbar */
@@ -143,30 +143,30 @@ body.x-container {
   overflow: hidden;
 }
 
-/* Sidebar */
+/* Sidebar - More Compact */
 .sidebar { 
-  width: 260px; 
+  width: 200px; 
   border-right: 1px solid #2a2a2a; 
-  padding: 20px 0; 
+  padding: 12px 0; 
   background: #161616;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .sidebar .menu-item { 
-  margin: 0 12px;
-  padding: 8px 16px; 
+  margin: 0 8px;
+  padding: 6px 12px; 
   cursor: pointer; 
   display: flex; 
   align-items: center; 
-  gap: 12px; 
+  gap: 8px; 
   color: #a0a0a0;
   transition: all 0.15s ease;
-  border-radius: 6px;
-  font-weight: 400;
-  font-size: 13px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 12px;
   position: relative;
 }
 
@@ -178,12 +178,12 @@ body.x-container {
 .sidebar .menu-item.active { 
   background: #ff6b35;
   color: #ffffff;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 .sidebar .menu-item i {
-  font-size: 16px;
-  width: 20px;
+  font-size: 14px;
+  width: 16px;
   text-align: center;
 }
 
@@ -197,9 +197,9 @@ body.x-container {
   overflow: hidden;
 }
 
-/* Content Header */
+/* Content Header - More Compact */
 .content-header { 
-  padding: 20px 30px; 
+  padding: 12px 20px; 
   display: flex; 
   align-items: center; 
   justify-content: space-between; 
@@ -208,26 +208,26 @@ body.x-container {
 }
 
 .content-header .title {
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 600;
   color: #ffffff;
   margin: 0;
 }
 
-/* Content List - Grid Layout */
+/* Content List - Grid Layout - More Compact */
 .content-list { 
-  padding: 30px; 
+  padding: 16px; 
   overflow: auto; 
   background: #1e1e1e;
   scrollbar-width: thin;
   scrollbar-color: #3a3a3a transparent;
   display: grid; 
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+  gap: 12px;
 }
 
 .content-list::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .content-list::-webkit-scrollbar-track {
@@ -236,22 +236,22 @@ body.x-container {
 
 .content-list::-webkit-scrollbar-thumb {
   background: var(--border);
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 .content-list::-webkit-scrollbar-thumb:hover {
   background: var(--border-hover);
 }
 
-/* Plugin/Theme Cards */
+/* Plugin/Theme Cards - More Compact */
 .card { 
   border: 1px solid #3a3a3a; 
-  border-radius: 12px; 
-  padding: 16px; 
+  border-radius: 8px; 
+  padding: 12px; 
   background: #2a2a2a; 
   display: flex; 
   flex-direction: column; 
-  gap: 8px;
+  gap: 6px;
   transition: all 0.2s ease;
   overflow: hidden;
   position: relative;
@@ -260,20 +260,20 @@ body.x-container {
 
 .card:hover { 
   transform: translateY(-1px);
-  box-shadow: 0 8px 16px hsl(0 calc(1*0%) 0% /0.24);
+  box-shadow: 0 6px 12px hsl(0 calc(1*0%) 0% /0.24);
 }
 
-/* Plugin/Theme Card Header */
+/* Plugin/Theme Card Header - More Compact */
 .card-title { 
   display: flex; 
   align-items: flex-start; 
   justify-content: space-between; 
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .card-title .name { 
-  font-weight: 600; 
-  font-size: 15px;
+  font-weight: 700; 
+  font-size: 14px;
   color: #d4af37;
   flex: 1;
   margin: 0;
@@ -283,34 +283,34 @@ body.x-container {
 .card-actions { 
   display: flex; 
   align-items: center; 
-  gap: 4px; 
+  gap: 3px; 
   flex-shrink: 0;
 }
 
-/* Card Description */
+/* Card Description - More Compact */
 .card-description {
   color: #a0a0a0;
   font-size: 12px;
   line-height: 1.3;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
-/* Card Bottom Actions */
+/* Card Bottom Actions - More Compact */
 .card-bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
-  margin-bottom: -4px;
+  margin-bottom: -2px;
 }
 
-/* Card Action Icons */
+/* Card Action Icons - More Compact */
 .card-settings, .card-delete {
   color: #7a7a7a;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
+  padding: 3px;
+  border-radius: 3px;
   transition: all 0.15s ease;
 }
 
@@ -324,12 +324,12 @@ body.x-container {
   background: #3a3a3a;
 }
 
-/* Toggle Switch */
+/* Toggle Switch - More Compact */
 .switch { 
   position: relative; 
   display: inline-block; 
-  width: 42px; 
-  height: 24px; 
+  width: 36px; 
+  height: 20px; 
 }
 
 .switch input { 
@@ -345,15 +345,15 @@ body.x-container {
   bottom: 0; 
   background: #4a4a4a; 
   transition: all 0.2s ease; 
-  border-radius: 12px; 
+  border-radius: 10px; 
   border: none;
 }
 
 .slider:before { 
   position: absolute; 
   content: ""; 
-  height: 20px; 
-  width: 20px; 
+  height: 16px; 
+  width: 16px; 
   left: 2px; 
   top: 2px; 
   background: #ffffff; 
@@ -367,7 +367,7 @@ input:checked + .slider {
 }
 
 input:checked + .slider:before { 
-  transform: translateX(18px); 
+  transform: translateX(16px); 
 }
 
 .switch:hover .slider {
@@ -376,17 +376,17 @@ input:checked + .slider:before {
 
 .muted { 
   opacity: 0.6; 
-  font-size: 10px; 
+  font-size: 12px; 
   color: var(--text-4);
   line-height: 1.2;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 .spacer { 
   flex: 1; 
 }
 
-/* Editor modal */
+/* Editor modal - More Compact */
 /* Modern Modal Backdrop */
 .modal-backdrop { 
   position: fixed; 
@@ -416,29 +416,29 @@ input:checked + .slider:before {
   }
 }
 
-/* Streamlined Modal Container */
+/* Streamlined Modal Container - More Compact */
 .modal { 
-  width: min(900px, 90vw); 
-  height: min(700px, 85vh); 
+  width: min(750px, 90vw); 
+  height: min(600px, 85vh); 
   background: #1a1a1a; 
   border: 1px solid #333; 
-  border-radius: 16px; 
+  border-radius: 8px; 
   display: flex; 
   flex-direction: column; 
   overflow: hidden; 
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 8px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4), 0 6px 12px rgba(0, 0, 0, 0.2);
   animation: slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Modern Header */
+/* Modern Header - More Compact */
 .modal-header { 
-  padding: 24px 32px; 
+  padding: 12px 20px; 
   display: flex; 
   align-items: center; 
-  gap: 16px; 
+  gap: 8px; 
   border-bottom: 1px solid #333; 
   background: #1a1a1a;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
   color: #ffffff;
   position: relative;
@@ -447,9 +447,9 @@ input:checked + .slider:before {
 .modal-header::before {
   content: '';
   position: absolute;
-  left: 32px;
+  left: 20px;
   bottom: -1px;
-  width: 60px;
+  width: 40px;
   height: 2px;
   background: #ff6b35;
   border-radius: 1px;
@@ -464,25 +464,25 @@ input:checked + .slider:before {
   background: #1a1a1a;
 }
 
-/* Refined Form Fields */
+/* Refined Form Fields - More Compact */
 .field { 
   display: flex; 
   flex-direction: column;
-  gap: 16px; 
-  padding: 32px; 
+  gap: 8px; 
+  padding: 16px 20px 12px 20px; 
   background: #1a1a1a;
   border-bottom: 1px solid #333;
 }
 
-/* Modern Input Fields */
+/* Modern Input Fields - More Compact */
 .field input[type="text"] { 
   background: #2a2a2a; 
   border: 2px solid #404040; 
   color: #ffffff; 
-  padding: 16px 20px; 
-  border-radius: 10px; 
+  padding: 8px 12px; 
+  border-radius: 6px; 
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 400;
   transition: all 0.2s ease;
 }
@@ -499,37 +499,38 @@ input:checked + .slider:before {
   font-weight: 400;
 }
 
-/* Enhanced Editor */
+/* Enhanced Editor - More Compact */
 .editor-host { 
   flex: 1; 
   min-height: 0; 
-  margin: 0 32px 32px 32px;
-  border-radius: 12px;
+  margin: 8px 20px 16px 20px;
+  border-radius: 6px;
   overflow: hidden;
   border: 2px solid #404040;
   background: #2a2a2a;
 }
 
-/* Enhanced Code Editor */
+/* Enhanced Code Editor - More Compact */
 .CodeMirror { 
   height: 100% !important; 
   background: #2a2a2a !important;
   color: #ffffff !important;
   font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace !important;
-  font-size: 14px !important;
-  line-height: 1.6 !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
   border: none !important;
 }
 
 .CodeMirror .CodeMirror-gutters { 
   background: #333 !important; 
   border-right: 1px solid #404040 !important;
-  padding-right: 8px !important;
+  padding-right: 4px !important;
 }
 
 .CodeMirror .CodeMirror-linenumber { 
   color: #888 !important;
-  padding: 0 8px !important;
+  padding: 0 4px !important;
+  font-size: 10px !important;
 }
 
 .CodeMirror .CodeMirror-cursor {
@@ -540,31 +541,31 @@ input:checked + .slider:before {
   background: rgba(255, 107, 53, 0.2) !important;
 }
 
-/* Modern Footer */
+/* Modern Footer - More Compact */
 .modal-footer { 
-  padding: 24px 32px; 
+  padding: 12px 20px; 
   border-top: 1px solid #333; 
   display: flex; 
-  gap: 16px; 
+  gap: 8px; 
   justify-content: flex-end; 
   background: #1a1a1a;
 }
 
-/* Buttons */
+/* Buttons - More Compact */
 .btn { 
-  padding: 6px 16px; 
-  border-radius: 6px; 
+  padding: 4px 10px; 
+  border-radius: 4px; 
   border: 1px solid #4a4a4a; 
   background: #3a3a3a; 
   color: #ffffff; 
   cursor: pointer; 
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
   font-weight: 400;
-  font-size: 13px;
+  font-size: 11px;
   transition: all 0.15s ease;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .btn:hover { 
@@ -596,8 +597,8 @@ input:checked + .slider:before {
 }
 
 .icon-btn { 
-  width: 36px; 
-  height: 36px; 
+  width: 32px; 
+  height: 32px; 
   display: inline-flex; 
   align-items: center; 
   justify-content: center; 

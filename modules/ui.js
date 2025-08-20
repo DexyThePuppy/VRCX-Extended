@@ -23,20 +23,115 @@ window.VRCXExtended.UI = {
     li.id = config.UI.MENU_ITEM_ID;
     li.className = 'el-menu-item';
     li.setAttribute('tabindex', '-1');
+    
+    // Add custom tooltip functionality
+    this.addCustomTooltip(li, 'VRCX-Extended - Manage plugins and themes');
 
     const inner = document.createElement('div');
     const icon = document.createElement('i');
-    icon.className = 'el-icon-setting';
+    icon.className = 'el-icon-box';
     inner.appendChild(icon);
 
-    const title = document.createElement('span');
+    const title = document.createElement('template');
     title.setAttribute('slot', 'title');
-    title.textContent = 'VRCX-Extended';
+    const titleSpan = document.createElement('span');
+    titleSpan.textContent = 'VRCX-Extended';
+    title.appendChild(titleSpan);
     inner.appendChild(title);
 
     li.appendChild(inner);
     li.addEventListener('click', () => window.VRCXExtended.Popup.openManagerWindow());
     container.appendChild(li);
+  },
+
+  /**
+   * Add custom tooltip functionality to an element
+   * @param {HTMLElement} element - Element to add tooltip to
+   * @param {string} text - Tooltip text
+   */
+  addCustomTooltip(element, text) {
+    let tooltip = null;
+    let timeoutId = null;
+
+    const showTooltip = (e) => {
+      if (tooltip) {
+        tooltip.setAttribute('aria-hidden', 'false');
+        tooltip.className = 'el-tooltip__popper is-dark el-fade-in-linear-enter-active el-fade-in-linear-enter-to';
+        return;
+      }
+      
+      // Create main tooltip container
+      tooltip = document.createElement('div');
+      tooltip.className = 'el-tooltip__popper is-dark el-fade-in-linear-enter-active el-fade-in-linear-enter-to';
+      tooltip.setAttribute('role', 'tooltip');
+      tooltip.setAttribute('aria-hidden', 'false');
+      tooltip.setAttribute('x-placement', 'right');
+      
+      // Create tooltip content
+      const content = document.createElement('div');
+      const textSpan = document.createElement('span');
+      textSpan.textContent = text;
+      content.appendChild(textSpan);
+      
+      // Create tooltip arrow
+      const arrow = document.createElement('div');
+      arrow.setAttribute('x-arrow', '');
+      arrow.className = 'popper__arrow';
+      arrow.style.top = '11px';
+      
+      tooltip.appendChild(content);
+      tooltip.appendChild(arrow);
+      
+      
+      document.body.appendChild(tooltip);
+      
+      // Position tooltip
+      const rect = element.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+      
+      // Position to the right of the element by default
+      let left = rect.right;
+      let top = rect.top + (rect.height / 2) - (tooltipRect.height / 2);
+      let placement = 'right';
+      
+      // Adjust if tooltip would go off screen
+      if (left + tooltipRect.width > window.innerWidth - 8) {
+        // Show to the left if not enough space on the right
+        left = rect.left - tooltipRect.width - 8;
+        placement = 'left';
+        tooltip.setAttribute('x-placement', 'left');
+      }
+      if (top < 8) {
+        top = 8;
+      }
+      if (top + tooltipRect.height > window.innerHeight - 8) {
+        top = window.innerHeight - tooltipRect.height - 8;
+      }
+      
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
+    };
+
+    const hideTooltip = () => {
+      if (tooltip) {
+        tooltip.setAttribute('aria-hidden', 'true');
+        tooltip.className = 'el-tooltip__popper is-dark el-fade-in-linear-leave-active el-fade-in-linear-leave-to';
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
+
+    element.addEventListener('mouseenter', (e) => {
+      showTooltip(e);
+    });
+
+    element.addEventListener('mouseleave', hideTooltip);
+    element.addEventListener('focus', (e) => {
+      showTooltip(e);
+    });
+    element.addEventListener('blur', hideTooltip);
   },
 
   /**
@@ -162,39 +257,81 @@ window.VRCXExtended.UI = {
     
     deleteIcon.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (confirm('Are you sure you want to delete "' + item.name + '"?')) {
-        const storageKey = section === 'plugins' ? config.KEYS.PLUGINS : config.KEYS.THEMES;
-        const allItems = utils.readJSON(storageKey, []);
-        const index = allItems.findIndex(x => x.id === item.id);
+      console.log('🗑️ Deleting item:', item.name, 'from section:', section);
+      const storageKey = section === 'plugins' ? config.KEYS.PLUGINS : config.KEYS.THEMES;
+      const allItems = utils.readJSON(storageKey, []);
+      console.log('🗑️ Current items before deletion:', allItems.length);
+      const index = allItems.findIndex(x => x.id === item.id);
+      console.log('🗑️ Found item at index:', index);
+      
+      if (index !== -1) {
+        allItems.splice(index, 1);
+        utils.writeJSON(storageKey, allItems);
+        console.log('🗑️ Item removed from storage, new count:', allItems.length);
         
-        if (index !== -1) {
-          allItems.splice(index, 1);
-          utils.writeJSON(storageKey, allItems);
-          
-          // Refresh the view and apply changes
-          window.VRCXExtended.PopupManager.renderCurrentSection();
-          
-          let refreshSuccess = true;
-          try {
-            if (section === 'plugins' && window.opener?.$app?.refreshVrcxPlugins) {
-              window.opener.$app.refreshVrcxPlugins();
-            }
-            if (section === 'themes' && window.opener?.$app?.refreshVrcxThemes) {
-              window.opener.$app.refreshVrcxThemes();
-            }
-          } catch (refreshError) {
-            console.warn('Failed to refresh after deletion:', refreshError);
-            refreshSuccess = false;
-          }
-          
-          // Show deletion notification
-          const itemType = section === 'plugins' ? 'Plugin' : 'Theme';
-          const message = refreshSuccess 
-            ? itemType + ' <strong>' + utils.escapeHtml(item.name) + '</strong> deleted successfully'
-            : itemType + ' <strong>' + utils.escapeHtml(item.name) + '</strong> deleted (refresh may be needed)';
-          
-          utils.showNotification(message, refreshSuccess ? 'success' : 'warning');
+        // Verify deletion worked
+        const verifyItems = utils.readJSON(storageKey, []);
+        const stillExists = verifyItems.findIndex(x => x.id === item.id) !== -1;
+        if (stillExists) {
+          console.error('❌ Item still exists after deletion!');
+        } else {
+          console.log('✅ Item successfully deleted from storage');
         }
+        
+        // Remove the card element from the DOM immediately
+        const cardElement = e.target.closest('.card');
+        if (cardElement) {
+          cardElement.remove();
+        }
+        
+        // Try to refresh the popup if it exists
+        try {
+          if (window.VRCXExtended.PopupManager && window.VRCXExtended.PopupManager.renderCurrentSection) {
+            window.VRCXExtended.PopupManager.renderCurrentSection();
+          }
+        } catch (popupError) {
+          console.warn('Popup refresh failed:', popupError);
+        }
+        
+        // Force a page refresh as fallback if needed
+        setTimeout(() => {
+          const currentItems = utils.readJSON(storageKey, []);
+          if (currentItems.findIndex(x => x.id === item.id) !== -1) {
+            console.warn('Item still exists in storage, forcing refresh');
+            location.reload();
+          }
+        }, 1000);
+        
+        // Also try to remove from any open popup windows
+        try {
+          if (window.opener && window.opener.VRCXExtended && window.opener.VRCXExtended.PopupManager) {
+            window.opener.VRCXExtended.PopupManager.renderCurrentSection();
+          }
+        } catch (popupError) {
+          console.warn('Failed to refresh popup window:', popupError);
+        }
+        
+        let refreshSuccess = true;
+        try {
+          if (section === 'plugins' && window.opener?.$app?.refreshVrcxPlugins) {
+            window.opener.$app.refreshVrcxPlugins();
+          }
+          if (section === 'themes' && window.opener?.$app?.refreshVrcxThemes) {
+            window.opener.$app.refreshVrcxThemes();
+          }
+        } catch (refreshError) {
+          console.warn('Failed to refresh after deletion:', refreshError);
+          refreshSuccess = false;
+        }
+        
+        // Show deletion notification
+        const itemType = section === 'plugins' ? 'Plugin' : 'Theme';
+        const itemName = item.name || '(untitled)';
+        const message = refreshSuccess 
+          ? itemType + ' <strong>' + utils.escapeHtml(itemName) + '</strong> deleted successfully'
+          : itemType + ' <strong>' + utils.escapeHtml(itemName) + '</strong> deleted (refresh may be needed)';
+        
+        utils.showNotification(message, refreshSuccess ? 'success' : 'warning');
       }
     });
 

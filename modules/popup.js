@@ -227,22 +227,58 @@ window.VRCXExtended.Popup = {
       deleteIcon.title = 'Delete';
       deleteIcon.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (confirm('Are you sure you want to delete "' + item.name + '"?')) {
-          const storageKey = section === 'plugins' ? KEYS.PLUGINS : KEYS.THEMES;
-          const allItems = this.readJSON(storageKey, []);
-          const index = allItems.findIndex(x => x.id === item.id);
+        console.log('🗑️ [Popup] Deleting item:', item.name, 'from section:', section);
+        const storageKey = section === 'plugins' ? KEYS.PLUGINS : KEYS.THEMES;
+        const allItems = this.readJSON(storageKey, []);
+        console.log('🗑️ [Popup] Current items before deletion:', allItems.length);
+        const index = allItems.findIndex(x => x.id === item.id);
+        console.log('🗑️ [Popup] Found item at index:', index);
+        
+        if (index !== -1) {
+          allItems.splice(index, 1);
+          this.writeJSON(storageKey, allItems);
+          console.log('🗑️ [Popup] Item removed from storage, new count:', allItems.length);
           
-          if (index !== -1) {
-            allItems.splice(index, 1);
-            this.writeJSON(storageKey, allItems);
-            this.renderCurrentSection();
-            
+          // Verify deletion worked
+          const verifyItems = this.readJSON(storageKey, []);
+          const stillExists = verifyItems.findIndex(x => x.id === item.id) !== -1;
+          if (stillExists) {
+            console.error('❌ [Popup] Item still exists after deletion!');
+          } else {
+            console.log('✅ [Popup] Item successfully deleted from storage');
+          }
+          
+          // Remove the card element from the DOM immediately
+          const cardElement = e.target.closest('.card');
+          if (cardElement) {
+            cardElement.remove();
+          }
+          
+          // Refresh the current section
+          this.renderCurrentSection();
+          
+          // Refresh the opener window
+          let refreshSuccess = true;
+          try {
             if (section === 'plugins' && window.opener?.$app?.refreshVrcxPlugins) {
               window.opener.$app.refreshVrcxPlugins();
             }
             if (section === 'themes' && window.opener?.$app?.refreshVrcxThemes) {
               window.opener.$app.refreshVrcxThemes();
             }
+          } catch (refreshError) {
+            console.warn('Failed to refresh after deletion:', refreshError);
+            refreshSuccess = false;
+          }
+          
+          // Show deletion notification
+          if (window.opener?.VRCXExtended?.Utils?.showNotification) {
+            const itemType = section === 'plugins' ? 'Plugin' : 'Theme';
+            const itemName = item.name || '(untitled)';
+            const message = refreshSuccess 
+              ? itemType + ' <strong>' + itemName + '</strong> deleted successfully'
+              : itemType + ' <strong>' + itemName + '</strong> deleted (refresh may be needed)';
+            window.opener.VRCXExtended.Utils.showNotification(message, refreshSuccess ? 'success' : 'warning');
           }
         }
       });
@@ -270,7 +306,7 @@ window.VRCXExtended.Popup = {
 
       const meta = document.createElement('div');
       meta.className = 'muted';
-      meta.style.fontSize = '11px';
+      meta.style.fontSize = '12px';
       meta.textContent = new Date(item.updatedAt || item.createdAt || Date.now()).toLocaleDateString();
 
       const label = document.createElement('label');
@@ -297,7 +333,8 @@ window.VRCXExtended.Popup = {
           if (window.opener?.VRCXExtended?.Utils?.showNotification) {
             const itemType = section === 'plugins' ? 'Plugin' : 'Theme';
             const action = checkbox.checked ? 'enabled' : 'disabled';
-            const message = itemType + ' <strong>' + item.name + '</strong> ' + action;
+            const itemName = item.name || '(untitled)';
+            const message = itemType + ' <strong>' + itemName + '</strong> ' + action;
             window.opener.VRCXExtended.Utils.showNotification(message, 'success');
           }
           
@@ -325,33 +362,33 @@ window.VRCXExtended.Popup = {
       
       const settingsContainer = document.createElement('div');
       settingsContainer.style.gridColumn = '1 / -1';
-      settingsContainer.style.maxWidth = '600px';
+      settingsContainer.style.maxWidth = '500px';
       settingsContainer.style.margin = '0 auto';
       
       // Cache Settings Card
       const cacheCard = document.createElement('div');
       cacheCard.className = 'card';
-      cacheCard.style.marginBottom = '20px';
+      cacheCard.style.marginBottom = '12px';
       
       const cacheTitle = document.createElement('div');
       cacheTitle.className = 'card-title';
-      cacheTitle.innerHTML = '<h3 style="margin: 0; color: var(--text-2, hsl(38, 47%, 80%));">Cache Settings</h3>';
+      cacheTitle.innerHTML = '<h3 style="margin: 0; font-size: 14px; color: var(--text-2, hsl(38, 47%, 80%));">Cache Settings</h3>';
       
       const cacheContent = document.createElement('div');
       cacheContent.style.display = 'flex';
       cacheContent.style.flexDirection = 'column';
-      cacheContent.style.gap = '16px';
+      cacheContent.style.gap = '10px';
       
       // Disable cache toggle
       const cacheToggleContainer = document.createElement('div');
       cacheToggleContainer.style.display = 'flex';
       cacheToggleContainer.style.alignItems = 'center';
-      cacheToggleContainer.style.gap = '12px';
+      cacheToggleContainer.style.gap = '8px';
       
       const cacheCheckbox = document.createElement('input');
       cacheCheckbox.type = 'checkbox';
       cacheCheckbox.id = 'disableCacheCheckbox';
-      cacheCheckbox.style.transform = 'scale(1.2)';
+      cacheCheckbox.style.transform = 'scale(1.1)';
       
       // Get current setting from opener window
       const currentSettings = window.opener?.VRCXExtended?.Config?.getSettings?.() || {};
@@ -361,6 +398,7 @@ window.VRCXExtended.Popup = {
       cacheLabel.htmlFor = 'disableCacheCheckbox';
       cacheLabel.style.cursor = 'pointer';
       cacheLabel.style.userSelect = 'none';
+      cacheLabel.style.fontSize = '12px';
       cacheLabel.textContent = 'Disable module caching (for development)';
       
       cacheCheckbox.addEventListener('change', () => {
@@ -381,7 +419,7 @@ window.VRCXExtended.Popup = {
       
       const cacheInfo = document.createElement('div');
       cacheInfo.className = 'muted';
-      cacheInfo.style.fontSize = '13px';
+      cacheInfo.style.fontSize = '12px';
       cacheInfo.textContent = 'When disabled, modules will always be downloaded fresh instead of using cached versions. Useful for development but slower loading.';
       
       // Clear cache button
@@ -391,6 +429,8 @@ window.VRCXExtended.Popup = {
       clearCacheBtn.style.borderColor = 'var(--accent-1, #66b1ff)';
       clearCacheBtn.style.color = 'var(--text-0, #282828)';
       clearCacheBtn.style.alignSelf = 'flex-start';
+      clearCacheBtn.style.fontSize = '11px';
+      clearCacheBtn.style.padding = '4px 8px';
       clearCacheBtn.textContent = '🗑️ Clear Module Cache';
       
       clearCacheBtn.addEventListener('click', () => {
@@ -415,27 +455,27 @@ window.VRCXExtended.Popup = {
       // Debug Mode Settings Card
       const debugCard = document.createElement('div');
       debugCard.className = 'card';
-      debugCard.style.marginBottom = '20px';
+      debugCard.style.marginBottom = '12px';
       
       const debugTitle = document.createElement('div');
       debugTitle.className = 'card-title';
-      debugTitle.innerHTML = '<h3 style="margin: 0; color: var(--text-2, hsl(38, 47%, 80%));">Debug Mode</h3>';
+      debugTitle.innerHTML = '<h3 style="margin: 0; font-size: 14px; color: var(--text-2, hsl(38, 47%, 80%));">Debug Mode</h3>';
       
       const debugContent = document.createElement('div');
       debugContent.style.display = 'flex';
       debugContent.style.flexDirection = 'column';
-      debugContent.style.gap = '16px';
+      debugContent.style.gap = '10px';
       
       // Debug mode toggle
       const debugToggleContainer = document.createElement('div');
       debugToggleContainer.style.display = 'flex';
       debugToggleContainer.style.alignItems = 'center';
-      debugToggleContainer.style.gap = '12px';
+      debugToggleContainer.style.gap = '8px';
       
       const debugCheckbox = document.createElement('input');
       debugCheckbox.type = 'checkbox';
       debugCheckbox.id = 'debugModeCheckbox';
-      debugCheckbox.style.transform = 'scale(1.2)';
+      debugCheckbox.style.transform = 'scale(1.1)';
       
       // Get current debug setting
       debugCheckbox.checked = currentSettings.debugMode || false;
@@ -444,6 +484,7 @@ window.VRCXExtended.Popup = {
       debugLabel.htmlFor = 'debugModeCheckbox';
       debugLabel.style.cursor = 'pointer';
       debugLabel.style.userSelect = 'none';
+      debugLabel.style.fontSize = '12px';
       debugLabel.textContent = 'Enable debug mode (load from local files)';
       
       debugCheckbox.addEventListener('change', () => {
@@ -452,7 +493,7 @@ window.VRCXExtended.Popup = {
           
           if (window.opener?.VRCXExtended?.Utils?.showNotification) {
             window.opener.VRCXExtended.Utils.showNotification(
-              debugCheckbox.checked ? 'Debug mode enabled - will load from local files' : 'Debug mode disabled - will load from GitHub',
+              debugCheckbox.checked ? 'Debug mode enabled - will load from local files (with GitHub fallback)' : 'Debug mode disabled - will load from GitHub',
               'success'
             );
           }
@@ -464,16 +505,16 @@ window.VRCXExtended.Popup = {
       
       const debugInfo = document.createElement('div');
       debugInfo.className = 'muted';
-      debugInfo.style.fontSize = '13px';
-      debugInfo.innerHTML = 'When enabled, VRCX-Extended will load modules from local file paths instead of GitHub. This requires the files to be available at:<br><br><code>file://vrcx/extended/modules/</code><br><code>file://vrcx/extended/html/</code><br><code>file://vrcx/extended/stylesheet/</code><br><br><strong>Note:</strong> You must refresh the page after changing this setting.';
+      debugInfo.style.fontSize = '11px';
+      debugInfo.innerHTML = 'When enabled, VRCX-Extended will load modules from local file paths instead of GitHub. If local files are not available, it will automatically fall back to GitHub. This requires the files to be available at:<br><br><code>file://vrcx/extended/modules/</code><br><code>file://vrcx/extended/html/</code><br><code>file://vrcx/extended/stylesheet/</code><br><br><strong>Note:</strong> You must refresh the page after changing this setting.';
       
       // Local paths info
       const pathsInfo = document.createElement('div');
       pathsInfo.style.backgroundColor = 'var(--surface-1, #32302f)';
-      pathsInfo.style.padding = '12px';
-      pathsInfo.style.borderRadius = '6px';
+      pathsInfo.style.padding = '8px';
+      pathsInfo.style.borderRadius = '4px';
       pathsInfo.style.fontFamily = 'monospace';
-      pathsInfo.style.fontSize = '12px';
+      pathsInfo.style.fontSize = '10px';
       pathsInfo.style.color = 'var(--text-2, hsl(38, 47%, 80%))';
       pathsInfo.innerHTML = 
         '<strong>Local Debug Paths:</strong><br>' +
@@ -493,15 +534,16 @@ window.VRCXExtended.Popup = {
       
       const storageTitle = document.createElement('div');
       storageTitle.className = 'card-title';
-      storageTitle.innerHTML = '<h3 style="margin: 0; color: var(--text-2, hsl(38, 47%, 80%));">Storage Management</h3>';
+      storageTitle.innerHTML = '<h3 style="margin: 0; font-size: 14px; color: var(--text-2, hsl(38, 47%, 80%));">Storage Management</h3>';
       
       const storageContent = document.createElement('div');
       storageContent.style.display = 'flex';
       storageContent.style.flexDirection = 'column';
-      storageContent.style.gap = '12px';
+      storageContent.style.gap = '8px';
       
       const storageInfo = document.createElement('div');
       storageInfo.className = 'muted';
+      storageInfo.style.fontSize = '11px';
       storageInfo.textContent = 'Reset all plugins and themes data. This action cannot be undone.';
       
       const resetBtn = document.createElement('button');
@@ -510,6 +552,8 @@ window.VRCXExtended.Popup = {
       resetBtn.style.borderColor = 'var(--red-2, #ea6962)';
       resetBtn.style.color = 'var(--text-0, #282828)';
       resetBtn.style.alignSelf = 'flex-start';
+      resetBtn.style.fontSize = '11px';
+      resetBtn.style.padding = '4px 8px';
       resetBtn.textContent = '⚠️ Reset All Data';
       
       resetBtn.addEventListener('click', () => {

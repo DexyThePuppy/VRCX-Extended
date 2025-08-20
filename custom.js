@@ -42,6 +42,38 @@
     };
 
     /**
+     * Get the appropriate module system URL based on debug mode
+     * @returns {string} URL for the module system
+     */
+    function getModuleSystemUrl() {
+        // Check localStorage for debug mode setting first, then fall back to CONFIG
+        let isDebugMode = CONFIG.debugMode;
+        try {
+            const storedSettings = localStorage.getItem('vrcx_extended_settings');
+            console.log('🔧 getModuleSystemUrl - Raw localStorage settings:', storedSettings);
+            if (storedSettings) {
+                const settings = JSON.parse(storedSettings);
+                console.log('🔧 getModuleSystemUrl - Parsed localStorage settings:', settings);
+                isDebugMode = settings.debugMode || CONFIG.debugMode;
+            }
+        } catch (error) {
+            console.warn('Failed to read debug mode from localStorage:', error);
+        }
+        
+        console.log('🔧 getModuleSystemUrl - Final debug mode value:', isDebugMode);
+        
+        if (isDebugMode) {
+            const localPath = CONFIG.localDebugPaths.modules + '/' + CONFIG.moduleSystemFile;
+            console.log(`🔧 Debug mode: Loading module system from local path: ${localPath}`);
+            return localPath;
+        } else {
+            const githubUrl = CONFIG.baseUrl + CONFIG.moduleSystemFile;
+            console.log(`🌐 Production mode: Loading module system from GitHub: ${githubUrl}`);
+            return githubUrl;
+        }
+    }
+
+    /**
      * Simple module loader - only used to load the module system
      * @param {string} src - Source URL of the script
      * @returns {Promise} Promise that resolves when script is loaded
@@ -92,26 +124,48 @@
      * Initialize debug settings if debug mode is enabled
      */
     function initializeDebugSettings() {
-        if (CONFIG.debugMode) {
+        // Check localStorage for debug mode setting first, then fall back to CONFIG
+        let isDebugMode = CONFIG.debugMode;
+        try {
+            const storedSettings = localStorage.getItem('vrcx_extended_settings');
+            console.log('🔧 Raw localStorage settings:', storedSettings);
+            if (storedSettings) {
+                const settings = JSON.parse(storedSettings);
+                console.log('🔧 Parsed localStorage settings:', settings);
+                isDebugMode = settings.debugMode || CONFIG.debugMode;
+            }
+        } catch (error) {
+            console.warn('Failed to read debug mode from localStorage:', error);
+        }
+        
+        console.log('🔧 Final debug mode value:', isDebugMode);
+        
+        // Always initialize the Config object so it's available to the module system
+        if (!window.VRCXExtended) {
+            window.VRCXExtended = {};
+        }
+        
+        if (!window.VRCXExtended.Config) {
+            console.log('🔧 Creating temporary Config object with debug mode:', isDebugMode);
+            window.VRCXExtended.Config = {
+                getSetting: (key) => {
+                    if (key === 'debugMode') return isDebugMode;
+                    if (key === 'localDebugPaths') return CONFIG.localDebugPaths;
+                    return null;
+                },
+                getSettings: () => ({
+                    debugMode: isDebugMode,
+                    localDebugPaths: CONFIG.localDebugPaths
+                })
+            };
+        } else {
+            console.log('🔧 Config object already exists, debug mode:', isDebugMode);
+        }
+        
+        if (isDebugMode) {
             console.log('🔧 Debug mode enabled - initializing local file paths...');
-            
-            // Create a temporary Config object if it doesn't exist yet
-            if (!window.VRCXExtended) {
-                window.VRCXExtended = {};
-            }
-            
-            if (!window.VRCXExtended.Config) {
-                window.VRCXExtended.Config = {
-                    getSetting: (key) => {
-                        if (key === 'debugMode') return CONFIG.debugMode;
-                        if (key === 'localDebugPaths') return CONFIG.localDebugPaths;
-                        return null;
-                    }
-                };
-            }
-            
             console.log('🔧 Debug settings initialized:', {
-                debugMode: CONFIG.debugMode,
+                debugMode: isDebugMode,
                 localPaths: CONFIG.localDebugPaths
             });
         }
@@ -140,7 +194,8 @@
             
             while (retryCount <= maxRetries) {
                 try {
-                    await loadModuleSystem(CONFIG.baseUrl + CONFIG.moduleSystemFile);
+                    const moduleSystemUrl = getModuleSystemUrl();
+                    await loadModuleSystem(moduleSystemUrl);
                     break;
                 } catch (loadError) {
                     retryCount++;

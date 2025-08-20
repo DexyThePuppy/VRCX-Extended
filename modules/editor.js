@@ -75,6 +75,7 @@ window.VRCXExtended.Editor = {
     const body = document.createElement('div');
     body.className = 'modal-body';
 
+    // Compact form fields container
     const field = document.createElement('div');
     field.className = 'field';
     
@@ -91,7 +92,6 @@ window.VRCXExtended.Editor = {
     descriptionInput.type = 'text';
     descriptionInput.placeholder = 'Description (optional)';
     descriptionInput.value = item?.description || '';
-    descriptionInput.style.marginTop = '12px';
     descriptionInput.id = 'editor-description-input';
     field.appendChild(descriptionInput);
 
@@ -197,7 +197,7 @@ window.VRCXExtended.Editor = {
       // Show fallback message
       const editorHost = textarea.parentElement;
       const errorDiv = document.createElement('div');
-      errorDiv.style.cssText = 'padding: 10px; color: #ff6b6b;';
+      errorDiv.style.cssText = 'padding: 8px; color: #ff6b6b; font-size: 12px;';
       errorDiv.textContent = 'CodeMirror failed to load. You can still edit in the textarea below.';
       editorHost.insertBefore(errorDiv, textarea);
     }
