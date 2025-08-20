@@ -88,19 +88,13 @@ window.VRCXExtended.Injection = {
     const injectedThemes = this.injectThemes(themes);
     
     // Show theme injection notification
-    if (injectedThemes.length > 0) {
+    if (injectedThemes.length > 0 && typeof Noty !== 'undefined') {
       const message = 'Themes refreshed: <strong>' + injectedThemes.join(', ') + '</strong>';
-      
-      // Try Utils first, then fallback to direct Noty
-      if (utils && utils.showNotification) {
-        utils.showNotification(message, 'success', 4000);
-      } else if (typeof Noty !== 'undefined') {
-        new Noty({
-          type: 'success',
-          text: message,
-          timeout: 4000
-        }).show();
-      }
+      new Noty({
+        type: 'success',
+        text: message,
+        timeout: 4000
+      }).show();
     }
   },
 
@@ -115,19 +109,13 @@ window.VRCXExtended.Injection = {
     const injectedPlugins = this.injectPlugins(plugins);
     
     // Show plugin injection notification
-    if (injectedPlugins.length > 0) {
+    if (injectedPlugins.length > 0 && typeof Noty !== 'undefined') {
       const message = 'Plugins refreshed: <strong>' + injectedPlugins.join(', ') + '</strong>';
-      
-      // Try Utils first, then fallback to direct Noty
-      if (utils && utils.showNotification) {
-        utils.showNotification(message, 'success', 4000);
-      } else if (typeof Noty !== 'undefined') {
-        new Noty({
-          type: 'success',
-          text: message,
-          timeout: 4000
-        }).show();
-      }
+      new Noty({
+        type: 'success',
+        text: message,
+        timeout: 4000
+      }).show();
     }
   },
 
@@ -152,20 +140,14 @@ window.VRCXExtended.Injection = {
       message += 'Plugins loaded: <strong>' + injectedPlugins.join(', ') + '</strong>';
     }
     
-    // Delay notification to ensure system is ready
-    setTimeout(() => {
-      const utils = window.VRCXExtended?.Utils;
-      if (utils && utils.showNotification) {
-        utils.showNotification(message, 'success', 5000);
-      } else if (typeof Noty !== 'undefined') {
-        // Fallback to direct Noty if Utils not available
-        new Noty({
-          type: 'success',
-          text: message,
-          timeout: 5000
-        }).show();
-      }
-    }, 1000); // 1 second delay to ensure system is ready
+    // Use Noty directly
+    if (typeof Noty !== 'undefined') {
+      new Noty({
+        type: 'success',
+        text: message,
+        timeout: 5000
+      }).show();
+    }
   },
 
   /**
