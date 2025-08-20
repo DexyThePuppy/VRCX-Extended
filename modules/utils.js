@@ -332,5 +332,59 @@ window.VRCXExtended.Utils = {
       });
       return clonedObj;
     }
+  },
+
+  /**
+   * Ensure Noty library is available by trying to load it
+   * @returns {Promise} Promise that resolves when Noty is available
+   */
+  async ensureNotyAvailable() {
+    // Check if Noty is already available
+    if (typeof Noty !== 'undefined') {
+      return Promise.resolve();
+    }
+
+    // Check if we can access VRCX's bundled Noty
+    if (window.noty || window.Noty) {
+      window.Noty = window.Noty || window.noty;
+      return Promise.resolve();
+    }
+
+    // Try loading from CDN as last resort
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/noty@3.2.0-beta-deprecated/lib/noty.min.js';
+      
+      script.onload = () => {
+        // Set VRCX-style defaults if Noty loaded successfully
+        if (typeof Noty !== 'undefined') {
+          try {
+            Noty.overrideDefaults({
+              animation: {
+                open: 'animate__animated animate__bounceInLeft',
+                close: 'animate__animated animate__bounceOutLeft'
+              },
+              layout: 'bottomLeft',
+              theme: 'mint',
+              timeout: 6000
+            });
+            console.log('✅ Noty loaded and configured with VRCX defaults');
+            resolve();
+          } catch (error) {
+            console.warn('Noty loaded but failed to set defaults:', error);
+            resolve(); // Still resolve since Noty is available
+          }
+        } else {
+          reject(new Error('Noty failed to load properly'));
+        }
+      };
+      
+      script.onerror = () => {
+        console.warn('Failed to load Noty from CDN - using fallback notifications');
+        reject(new Error('Failed to load Noty from CDN'));
+      };
+      
+      document.head.appendChild(script);
+    });
   }
 };
