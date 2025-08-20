@@ -226,6 +226,134 @@ body.x-container {
   gap: 16px;
 }
 
+/* Tabs Container */
+.tabs-container {
+  padding: 30px 30px 0 30px;
+  background: #1e1e1e;
+}
+
+.tabs-header {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid #3a3a3a;
+  margin-bottom: 0;
+}
+
+.tab-button {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  color: #a0a0a0;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  position: relative;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-button:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab-button.active {
+  color: #d4af37;
+  border-bottom-color: #d4af37;
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #1e1e1e;
+}
+
+.tab-content {
+  display: none;
+  padding: 30px;
+  background: #1e1e1e;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #3a3a3a transparent;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.tab-content.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.tab-content.online-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Online Content Styles */
+.online-warning {
+  background: rgba(255, 165, 0, 0.1);
+  border: 1px solid rgba(255, 165, 0, 0.3);
+  border-radius: 8px;
+  padding: 16px;
+  color: #ffa500;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.online-section {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.online-section h3 {
+  margin: 0 0 12px 0;
+  color: #d4af37;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.online-section p {
+  margin: 0 0 16px 0;
+  color: #a0a0a0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.online-textarea {
+  width: 100%;
+  min-height: 200px;
+  background: #1a1a1a;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  padding: 12px;
+  color: #ffffff;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  resize: vertical;
+  transition: border-color 0.2s ease;
+}
+
+.online-textarea:focus {
+  outline: none;
+  border-color: #d4af37;
+}
+
+.online-textarea::placeholder {
+  color: #666;
+}
+
 .content-list::-webkit-scrollbar {
   width: 8px;
 }
@@ -317,6 +445,7 @@ body.x-container {
   align-items: center;
   justify-content: space-between;
   margin-top: auto;
+  margin-bottom: -4px;
 }
 
 /* Card Action Icons */
@@ -390,10 +519,11 @@ input:checked + .slider:before {
 }
 
 .muted { 
-  opacity: 0.7; 
-  font-size: 13px; 
+  opacity: 0.6; 
+  font-size: 10px; 
   color: var(--text-4);
-  line-height: 1.4;
+  line-height: 1.2;
+  margin-top: 2px;
 }
 
 .spacer { 

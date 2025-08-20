@@ -14,6 +14,8 @@ window.VRCXExtended.Config = {
   KEYS: {
     PLUGINS: 'vrcx_mm_plugins',
     THEMES: 'vrcx_mm_themes',
+    ONLINE_PLUGINS: 'vrcx_mm_online_plugins',
+    ONLINE_THEMES: 'vrcx_mm_online_themes',
     SETTINGS: 'vrcx_extended_settings',
   },
 

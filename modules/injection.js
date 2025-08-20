@@ -27,6 +27,7 @@ window.VRCXExtended.Injection = {
     this.removeInjected('theme');
     const injectedThemes = [];
     
+    // Inject local themes
     themes.filter(theme => theme.enabled).forEach(theme => {
       const style = document.createElement('style');
       style.setAttribute('data-vrcxmods', 'theme');
@@ -35,6 +36,10 @@ window.VRCXExtended.Injection = {
       document.head.appendChild(style);
       injectedThemes.push(theme.name);
     });
+    
+    // Inject online themes
+    const onlineThemes = window.VRCXExtended.Utils.readJSON(window.VRCXExtended.Config.KEYS.ONLINE_THEMES, []);
+    this.injectOnlineThemes(onlineThemes, injectedThemes);
     
     return injectedThemes;
   },
@@ -48,6 +53,7 @@ window.VRCXExtended.Injection = {
     this.removeInjected('plugin');
     const injectedPlugins = [];
     
+    // Inject local plugins
     plugins.filter(plugin => plugin.enabled).forEach(plugin => {
       const script = document.createElement('script');
       script.setAttribute('data-vrcxmods', 'plugin');
@@ -57,7 +63,82 @@ window.VRCXExtended.Injection = {
       injectedPlugins.push(plugin.name);
     });
     
+    // Inject online plugins
+    const onlinePlugins = window.VRCXExtended.Utils.readJSON(window.VRCXExtended.Config.KEYS.ONLINE_PLUGINS, []);
+    this.injectOnlinePlugins(onlinePlugins, injectedPlugins);
+    
     return injectedPlugins;
+  },
+
+  /**
+   * Inject online themes from URLs
+   * @param {Array} themeUrls - Array of theme URLs
+   * @param {Array} injectedThemes - Array to append injected theme names to
+   */
+  injectOnlineThemes(themeUrls, injectedThemes) {
+    if (!Array.isArray(themeUrls) || themeUrls.length === 0) return;
+    
+    themeUrls.forEach((url, index) => {
+      if (!url || typeof url !== 'string') return;
+      
+      // Check for theme prefix (@light, @dark)
+      const isDarkTheme = url.startsWith('@dark ');
+      const isLightTheme = url.startsWith('@light ');
+      const actualUrl = isDarkTheme || isLightTheme ? url.substring(url.indexOf(' ') + 1) : url;
+      
+      // Skip if theme doesn't match current Discord theme
+      if (isDarkTheme && !document.body.classList.contains('theme-dark')) return;
+      if (isLightTheme && document.body.classList.contains('theme-dark')) return;
+      
+      const link = document.createElement('link');
+      link.setAttribute('data-vrcxmods', 'theme');
+      link.id = `vrcx-online-theme-${index}`;
+      link.rel = 'stylesheet';
+      link.href = actualUrl;
+      link.onload = () => {
+        console.log('✅ Online theme loaded:', actualUrl);
+        injectedThemes.push(`Online Theme ${index + 1}`);
+      };
+      link.onerror = () => {
+        console.error('❌ Failed to load online theme:', actualUrl);
+      };
+      document.head.appendChild(link);
+    });
+  },
+
+  /**
+   * Inject online plugins from URLs
+   * @param {Array} pluginUrls - Array of plugin URLs
+   * @param {Array} injectedPlugins - Array to append injected plugin names to
+   */
+  injectOnlinePlugins(pluginUrls, injectedPlugins) {
+    if (!Array.isArray(pluginUrls) || pluginUrls.length === 0) return;
+    
+    pluginUrls.forEach((url, index) => {
+      if (!url || typeof url !== 'string') return;
+      
+      // Check for theme prefix (@light, @dark)
+      const isDarkTheme = url.startsWith('@dark ');
+      const isLightTheme = url.startsWith('@light ');
+      const actualUrl = isDarkTheme || isLightTheme ? url.substring(url.indexOf(' ') + 1) : url;
+      
+      // Skip if theme doesn't match current Discord theme
+      if (isDarkTheme && !document.body.classList.contains('theme-dark')) return;
+      if (isLightTheme && document.body.classList.contains('theme-dark')) return;
+      
+      const script = document.createElement('script');
+      script.setAttribute('data-vrcxmods', 'plugin');
+      script.id = `vrcx-online-plugin-${index}`;
+      script.src = actualUrl;
+      script.onload = () => {
+        console.log('✅ Online plugin loaded:', actualUrl);
+        injectedPlugins.push(`Online Plugin ${index + 1}`);
+      };
+      script.onerror = () => {
+        console.error('❌ Failed to load online plugin:', actualUrl);
+      };
+      document.head.appendChild(script);
+    });
   },
 
   /**
@@ -106,6 +187,26 @@ window.VRCXExtended.Injection = {
         timeout: 5000
       }).show();
     }
+  },
+
+  /**
+   * Refresh themes only
+   */
+  refreshThemes() {
+    const config = window.VRCXExtended.Config;
+    const utils = window.VRCXExtended.Utils;
+    const themes = utils.readJSON(config.KEYS.THEMES, []);
+    this.injectThemes(themes);
+  },
+
+  /**
+   * Refresh plugins only
+   */
+  refreshPlugins() {
+    const config = window.VRCXExtended.Config;
+    const utils = window.VRCXExtended.Utils;
+    const plugins = utils.readJSON(config.KEYS.PLUGINS, []);
+    this.injectPlugins(plugins);
   },
 
   /**
