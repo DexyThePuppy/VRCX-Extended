@@ -294,14 +294,11 @@ window.VRCXExtended.Popup = {
           this.writeJSON(storageKey, allItems);
           
           // Show notification for toggle action
-          if (window.opener?.VRCXExtended?.Utils?.showToggleNotification) {
+          if (window.opener?.VRCXExtended?.Utils?.showNotification) {
             const itemType = section === 'plugins' ? 'Plugin' : 'Theme';
-            window.opener.VRCXExtended.Utils.showToggleNotification(
-              item.name, 
-              itemType, 
-              checkbox.checked, 
-              true
-            );
+            const action = checkbox.checked ? 'enabled' : 'disabled';
+            const message = itemType + ' <strong>' + item.name + '</strong> ' + action;
+            window.opener.VRCXExtended.Utils.showNotification(message, 'success');
           }
           
           if (section === 'plugins' && window.opener?.$app?.refreshVrcxPlugins) {
