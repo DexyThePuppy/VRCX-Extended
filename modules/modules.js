@@ -27,7 +27,8 @@ window.VRCXExtended.ModuleSystem = {
             ['config.js', 'utils.js'], // Core dependencies (parallel)
             ['injection.js'],           // Injection system
             ['ui.js', 'editor.js'],    // UI components (parallel)
-            ['popup.js']               // Popup (depends on all above)
+            ['popup.js'],              // Popup (depends on all above)
+            ['fileSystem.js']          // File system (depends on popup)
         ],
         
         // External resources (HTML/CSS)

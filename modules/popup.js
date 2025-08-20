@@ -139,7 +139,7 @@ window.VRCXExtended.Popup = {
       return document.querySelector('.sidebar .menu-item.active')?.dataset.section || 'plugins'; 
     },
     
-    async setSection(sec) {
+    setSection(sec) {
       document.querySelectorAll('.sidebar .menu-item').forEach(mi => 
         mi.classList.toggle('active', mi.dataset.section === sec)
       );
@@ -155,17 +155,17 @@ window.VRCXExtended.Popup = {
       const createBtn = document.getElementById('createBtn');
       createBtn.style.display = (sec === 'plugins' || sec === 'themes') ? 'inline-flex' : 'none';
       
-      await this.renderContent(sec);
+      this.renderContent(sec);
     },
 
-    async renderContent(section) {
+    renderContent(section) {
       const list = document.getElementById('list');
       list.innerHTML = '';
       
       switch(section) {
         case 'plugins':
         case 'themes':
-          await this.renderList(section);
+          this.renderList(section);
           break;
         case 'settings':
           this.renderSettings();
@@ -175,35 +175,13 @@ window.VRCXExtended.Popup = {
       }
     },
 
-    async renderList(section) {
+    renderList(section) {
       const list = document.getElementById('list');
+      const storageKey = section === 'plugins' ? KEYS.PLUGINS : KEYS.THEMES;
+      const data = this.readJSON(storageKey, []);
       
-      try {
-        // Show loading state
-        list.innerHTML = '<div class="muted">Loading files...</div>';
-        
-        // Get files from VRCX directory
-        const basePath = section === 'plugins' ? 'file://vrcx/plugins/' : 'file://vrcx/themes/';
-        const files = await this.listVrcxFiles(basePath);
-        
-        // Also get data from localStorage for additional metadata
-        const storageKey = section === 'plugins' ? KEYS.PLUGINS : KEYS.THEMES;
-        const storedData = this.readJSON(storageKey, []);
-        
-        // Merge file system data with stored metadata
-        const mergedData = this.mergeFileData(files, storedData, section);
-        
-        // Use simplified UI rendering
-        this.simpleRenderList(mergedData, section, list);
-      } catch (error) {
-        console.error('Failed to load files:', error);
-        list.innerHTML = '<div class="muted">Failed to load files. Using local storage only.</div>';
-        
-        // Fallback to localStorage only
-        const storageKey = section === 'plugins' ? KEYS.PLUGINS : KEYS.THEMES;
-        const data = this.readJSON(storageKey, []);
-        this.simpleRenderList(data, section, list);
-      }
+      // Use simplified UI rendering
+      this.simpleRenderList(data, section, list);
     },
 
     renderSettings() {
@@ -247,7 +225,7 @@ window.VRCXExtended.Popup = {
       const deleteIcon = document.createElement('i');
       deleteIcon.className = 'el-icon-delete card-delete';
       deleteIcon.title = 'Delete';
-      deleteIcon.addEventListener('click', async (e) => {
+      deleteIcon.addEventListener('click', (e) => {
         e.stopPropagation();
         if (confirm('Are you sure you want to delete "' + item.name + '"?')) {
           const storageKey = section === 'plugins' ? KEYS.PLUGINS : KEYS.THEMES;
@@ -255,26 +233,9 @@ window.VRCXExtended.Popup = {
           const index = allItems.findIndex(x => x.id === item.id);
           
           if (index !== -1) {
-            // Try to delete from file system if path exists
-            if (item.path) {
-              try {
-                const response = await fetch(item.path, {
-                  method: 'DELETE'
-                });
-                
-                if (response.ok) {
-                  console.log('Successfully deleted from file system:', item.path);
-                } else {
-                  console.warn('Failed to delete from file system, removing from localStorage only');
-                }
-              } catch (error) {
-                console.warn('File system delete failed, removing from localStorage only:', error);
-              }
-            }
-            
             allItems.splice(index, 1);
             this.writeJSON(storageKey, allItems);
-            await this.renderCurrentSection();
+            this.renderCurrentSection();
             
             if (section === 'plugins' && window.opener?.$app?.refreshVrcxPlugins) {
               window.opener.$app.refreshVrcxPlugins();
@@ -610,7 +571,7 @@ window.VRCXExtended.Popup = {
       cancelBtn.addEventListener('click', closeEditor);
       backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeEditor(); });
 
-      saveBtn.addEventListener('click', async function() {
+      saveBtn.addEventListener('click', function() {
         const storageKey = isPlugin ? KEYS.PLUGINS : KEYS.THEMES;
         const data = window.VRCXExtended.PopupManager.readJSON(storageKey, []);
         const name = nameInput.value.trim() || (isPlugin? 'Untitled Plugin' : 'Untitled Theme');
@@ -627,31 +588,6 @@ window.VRCXExtended.Popup = {
           code = textarea.value;
         }
 
-        try {
-          // Save to file system if possible
-          const basePath = isPlugin ? 'file://vrcx/plugins/' : 'file://vrcx/themes/';
-          const extension = isPlugin ? '.js' : '.css';
-          const fileName = window.VRCXExtended.PopupManager.sanitizeFileName(name) + extension;
-          const filePath = basePath + fileName;
-          
-          // Try to write to file system
-          const response = await fetch(filePath, {
-            method: 'PUT',
-            body: code,
-            headers: {
-              'Content-Type': 'text/plain'
-            }
-          });
-          
-          if (response.ok) {
-            console.log('Successfully saved to file system:', filePath);
-          } else {
-            console.warn('Failed to save to file system, using localStorage only');
-          }
-        } catch (error) {
-          console.warn('File system save failed, using localStorage only:', error);
-        }
-
         if (item?.id) {
           const index = data.findIndex(x => x.id === item.id);
           if (index !== -1) {
@@ -659,8 +595,6 @@ window.VRCXExtended.Popup = {
             data[index].description = description;
             data[index].code = code;
             data[index].updatedAt = window.VRCXExtended.PopupManager.nowIso();
-            data[index].fileName = fileName;
-            data[index].path = filePath;
           }
         } else {
           data.push({
@@ -671,8 +605,6 @@ window.VRCXExtended.Popup = {
             enabled: true,
             createdAt: window.VRCXExtended.PopupManager.nowIso(),
             updatedAt: window.VRCXExtended.PopupManager.nowIso(),
-            fileName: fileName,
-            path: filePath
           });
         }
 
@@ -698,8 +630,8 @@ window.VRCXExtended.Popup = {
         closeEditor();
         
         // Then refresh the current section
-        setTimeout(async () => {
-          await window.VRCXExtended.PopupManager.renderCurrentSection();
+        setTimeout(() => {
+          window.VRCXExtended.PopupManager.renderCurrentSection();
         }, 100);
       });
       
@@ -714,103 +646,8 @@ window.VRCXExtended.Popup = {
       });
     },
 
-    async renderCurrentSection() {
-      await this.renderContent(this.getSection());
-    },
-
-    /**
-     * List files from VRCX directory
-     * @param {string} basePath - Base path for plugins or themes
-     * @returns {Promise<Array>} Array of file information
-     */
-    async listVrcxFiles(basePath) {
-      try {
-        const response = await fetch(basePath);
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        
-        const html = await response.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        
-        const files = [];
-        const links = doc.querySelectorAll('a[href]');
-        
-        links.forEach(link => {
-          const href = link.getAttribute('href');
-          if (href && !href.startsWith('../') && !href.startsWith('./')) {
-            const fileName = href.replace(/\/$/, ''); // Remove trailing slash
-            if (fileName && fileName !== '' && (fileName.endsWith('.js') || fileName.endsWith('.css'))) {
-              files.push({
-                name: fileName.replace(/\.(js|css)$/, ''),
-                fileName: fileName,
-                path: basePath + fileName,
-                isFile: true
-              });
-            }
-          }
-        });
-        
-        return files;
-      } catch (error) {
-        console.error('Failed to list VRCX files:', basePath, error);
-        throw error;
-      }
-    },
-
-    /**
-     * Merge file system data with stored metadata
-     * @param {Array} files - Files from file system
-     * @param {Array} storedData - Data from localStorage
-     * @param {string} section - Section type (plugins/themes)
-     * @returns {Array} Merged data
-     */
-    mergeFileData(files, storedData, section) {
-      const merged = [];
-      
-      // Add files from file system
-      files.forEach(file => {
-        const storedItem = storedData.find(item => 
-          item.fileName === file.fileName || item.name === file.name
-        );
-        
-        if (storedItem) {
-          // Merge with stored metadata
-          merged.push({
-            ...storedItem,
-            path: file.path,
-            fileName: file.fileName,
-            exists: true
-          });
-        } else {
-          // Create new item from file
-          merged.push({
-            id: this.uid(),
-            name: file.name,
-            fileName: file.fileName,
-            path: file.path,
-            description: `Imported ${section.slice(0, -1)} from file system`,
-            enabled: true,
-            createdAt: this.nowIso(),
-            updatedAt: this.nowIso(),
-            exists: true
-          });
-        }
-      });
-      
-      // Add stored items that don't exist as files (legacy support)
-      storedData.forEach(storedItem => {
-        const exists = merged.some(item => item.id === storedItem.id);
-        if (!exists) {
-          merged.push({
-            ...storedItem,
-            exists: false
-          });
-        }
-      });
-      
-      return merged.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''));
+    async     renderCurrentSection() {
+      this.renderContent(this.getSection());
     },
 
     // Utility functions
@@ -835,19 +672,12 @@ window.VRCXExtended.Popup = {
       return 'id_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
     },
 
-    sanitizeFileName(name) {
-      return name
-        .replace(/[<>:"/\\|?*]/g, '_') // Replace invalid characters
-        .replace(/\s+/g, '_') // Replace spaces with underscores
-        .replace(/_{2,}/g, '_') // Replace multiple underscores with single
-        .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
-        .toLowerCase();
-    }
+
   };
 
   // Setup event listeners
   document.querySelectorAll('.sidebar .menu-item').forEach(mi => 
-    mi.addEventListener('click', async () => await window.VRCXExtended.PopupManager.setSection(mi.dataset.section))
+    mi.addEventListener('click', () => window.VRCXExtended.PopupManager.setSection(mi.dataset.section))
   );
   document.getElementById('createBtn').addEventListener('click', () => 
     window.VRCXExtended.PopupManager.openSimpleEditor(null)

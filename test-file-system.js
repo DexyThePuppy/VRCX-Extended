@@ -91,32 +91,32 @@ async function testVrcxFileSystem() {
 
 // Test function to check if VRCX-Extended file system is available
 function testVrcxExtendedFileSystem() {
-    console.log('🔧 Testing VRCX-Extended File System module...');
+    console.log('🔧 Testing VRCX-Extended File System...');
     
-    if (window.VRCXExtended && window.VRCXExtended.ModuleSystem && window.VRCXExtended.ModuleSystem.FileSystem) {
-        console.log('✅ VRCX-Extended File System module found!');
-        console.log('Available methods:', Object.keys(window.VRCXExtended.ModuleSystem.FileSystem));
+    if (window.VRCXExtended && window.VRCXExtended.FileSystem) {
+        console.log('✅ VRCX-Extended File System found!');
+        console.log('Available methods:', Object.keys(window.VRCXExtended.FileSystem));
         
         // Test the file system methods
-        const fs = window.VRCXExtended.ModuleSystem.FileSystem;
+        const fs = window.VRCXExtended.FileSystem;
         
-        // Test listFiles
-        fs.listFiles(fs.PATHS.PLUGINS).then(files => {
+        // Test listVrcxFiles
+        fs.listVrcxFiles('file://vrcx/plugins/').then(files => {
             console.log('📁 Plugins directory files:', files);
         }).catch(error => {
             console.error('❌ Failed to list plugins:', error);
         });
         
-        fs.listFiles(fs.PATHS.THEMES).then(files => {
+        fs.listVrcxFiles('file://vrcx/themes/').then(files => {
             console.log('🎨 Themes directory files:', files);
         }).catch(error => {
             console.error('❌ Failed to list themes:', error);
         });
         
     } else {
-        console.log('❌ VRCX-Extended File System module not found');
+        console.log('❌ VRCX-Extended File System not found');
         console.log('VRCXExtended available:', !!window.VRCXExtended);
-        console.log('ModuleSystem available:', !!(window.VRCXExtended && window.VRCXExtended.ModuleSystem));
+        console.log('FileSystem available:', !!(window.VRCXExtended && window.VRCXExtended.FileSystem));
     }
 }
 
