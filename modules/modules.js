@@ -515,6 +515,22 @@ window.VRCXExtended.ModuleSystem = {
                 timeout: false,
                 closeWith: []
             }).show();
+        } else {
+            // Try to load Noty if not available
+            if (window.VRCXExtended?.Utils?.ensureNotyAvailable) {
+                window.VRCXExtended.Utils.ensureNotyAvailable().then(() => {
+                    if (typeof Noty !== 'undefined') {
+                        this.state.loadingNotification = new Noty({
+                            type: 'info',
+                            text: '<i class="fa fa-spinner fa-spin"></i> Loading VRCX-Extended modules...',
+                            timeout: false,
+                            closeWith: []
+                        }).show();
+                    }
+                }).catch(() => {
+                    console.log('⏳ Loading VRCX-Extended modules... (Noty not available)');
+                });
+            }
         }
     },
 
