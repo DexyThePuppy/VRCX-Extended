@@ -399,6 +399,14 @@ window.VRCXExtended.ModuleSystem = {
             return false;
         }
 
+        // Additional validation for Utils module functions
+        if (Utils && typeof Utils.ensureNotyAvailable !== 'function') {
+            console.warn('⚠️ Utils module loaded but ensureNotyAvailable function missing');
+            console.log('📋 Available Utils functions:', Object.keys(Utils).filter(key => typeof Utils[key] === 'function'));
+        } else if (Utils) {
+            console.log('✅ Utils.ensureNotyAvailable function is available');
+        }
+
         console.log('✅ All required modules validated');
         return true;
     },
@@ -420,8 +428,19 @@ window.VRCXExtended.ModuleSystem = {
             console.log('📋 Step 0: Ensuring Noty library is available...');
             try {
                 console.log('📋 Checking if Noty is already available:', typeof Noty !== 'undefined');
-                await Utils.ensureNotyAvailable();
-                console.log('📋 After ensureNotyAvailable, Noty status:', typeof Noty !== 'undefined');
+                
+                // Check if Utils.ensureNotyAvailable exists before calling it
+                if (Utils && typeof Utils.ensureNotyAvailable === 'function') {
+                    await Utils.ensureNotyAvailable();
+                    console.log('📋 After ensureNotyAvailable, Noty status:', typeof Noty !== 'undefined');
+                } else {
+                    console.warn('⚠️ Utils.ensureNotyAvailable not available, checking for Noty directly');
+                    // Try to set up Noty if it's available but not detected properly
+                    if (window.noty || window.Noty) {
+                        window.Noty = window.Noty || window.noty;
+                    }
+                }
+                
                 if (typeof Noty !== 'undefined') {
                     console.log('✓ Noty library ready for global use');
                 } else {
