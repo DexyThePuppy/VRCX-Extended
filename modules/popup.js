@@ -293,11 +293,29 @@ window.VRCXExtended.Popup = {
           allItems[index].updatedAt = this.nowIso();
           this.writeJSON(storageKey, allItems);
           
-          if (section === 'plugins' && window.opener?.$app?.refreshVrcxPlugins) {
-            window.opener.$app.refreshVrcxPlugins();
+          // Apply changes immediately
+          let applySuccess = true;
+          try {
+            if (section === 'plugins' && window.opener?.$app?.refreshVrcxPlugins) {
+              window.opener.$app.refreshVrcxPlugins();
+            }
+            if (section === 'themes' && window.opener?.$app?.refreshVrcxThemes) {
+              window.opener.$app.refreshVrcxThemes();
+            }
+          } catch (error) {
+            console.warn('Failed to apply changes:', error);
+            applySuccess = false;
           }
-          if (section === 'themes' && window.opener?.$app?.refreshVrcxThemes) {
-            window.opener.$app.refreshVrcxThemes();
+          
+          // Show toggle notification
+          if (window.opener?.VRCXExtended?.Utils?.showToggleNotification) {
+            const itemType = section === 'plugins' ? 'Plugin' : 'Theme';
+            window.opener.VRCXExtended.Utils.showToggleNotification(
+              item.name, 
+              itemType, 
+              checkbox.checked, 
+              applySuccess
+            );
           }
         }
       });
