@@ -296,11 +296,10 @@ window.VRCXExtended.Popup = {
           // Show notification for toggle action
           if (window.opener?.VRCXExtended?.Utils?.showNotification) {
             const itemType = section === 'plugins' ? 'Plugin' : 'Theme';
+            const action = checkbox.checked ? 'enabled' : 'disabled';
             window.opener.VRCXExtended.Utils.showNotification(
-              item.name, 
-              itemType, 
-              checkbox.checked, 
-              true
+              itemType + ' <strong>' + item.name + '</strong> ' + action,
+              'success'
             );
           }
           
