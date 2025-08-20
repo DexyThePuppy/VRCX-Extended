@@ -265,7 +265,7 @@ window.VRCXExtended.UI = {
         
         // Show toggle notification
         const itemType = section === 'plugins' ? 'Plugin' : 'Theme';
-        utils.showToggleNotification(item.name, itemType, checkbox.checked, applySuccess);
+        utils.showNotification(item.name, itemType, checkbox.checked, applySuccess);
       }
     });
 
