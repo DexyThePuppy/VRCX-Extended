@@ -571,9 +571,9 @@ window.VRCXExtended.Popup = {
       cancelBtn.addEventListener('click', closeEditor);
       backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeEditor(); });
 
-      saveBtn.addEventListener('click', () => {
+      saveBtn.addEventListener('click', function() {
         const storageKey = isPlugin ? KEYS.PLUGINS : KEYS.THEMES;
-        const data = this.readJSON(storageKey, []);
+        const data = window.VRCXExtended.PopupManager.readJSON(storageKey, []);
         const name = nameInput.value.trim() || (isPlugin? 'Untitled Plugin' : 'Untitled Theme');
         const description = descriptionInput.value.trim();
         
@@ -594,21 +594,21 @@ window.VRCXExtended.Popup = {
             data[index].name = name;
             data[index].description = description;
             data[index].code = code;
-            data[index].updatedAt = this.nowIso();
+            data[index].updatedAt = window.VRCXExtended.PopupManager.nowIso();
           }
         } else {
           data.push({
-            id: this.uid(),
+            id: window.VRCXExtended.PopupManager.uid(),
             name,
             description,
             code,
             enabled: true,
-            createdAt: this.nowIso(),
-            updatedAt: this.nowIso(),
+            createdAt: window.VRCXExtended.PopupManager.nowIso(),
+            updatedAt: window.VRCXExtended.PopupManager.nowIso(),
           });
         }
 
-        this.writeJSON(storageKey, data);
+        window.VRCXExtended.PopupManager.writeJSON(storageKey, data);
         
         if (isPlugin && window.opener?.$app?.refreshVrcxPlugins) {
           window.opener.$app.refreshVrcxPlugins();
@@ -618,7 +618,7 @@ window.VRCXExtended.Popup = {
         }
 
         closeEditor();
-        this.renderCurrentSection();
+        window.VRCXExtended.PopupManager.renderCurrentSection();
       });
       
       modal.addEventListener('keydown', (e) => {
