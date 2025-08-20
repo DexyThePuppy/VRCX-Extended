@@ -320,6 +320,91 @@ window.VRCXExtended.Popup = {
       settingsContainer.style.maxWidth = '600px';
       settingsContainer.style.margin = '0 auto';
       
+      // Cache Settings Card
+      const cacheCard = document.createElement('div');
+      cacheCard.className = 'card';
+      cacheCard.style.marginBottom = '20px';
+      
+      const cacheTitle = document.createElement('div');
+      cacheTitle.className = 'card-title';
+      cacheTitle.innerHTML = '<h3 style="margin: 0; color: var(--text-2, hsl(38, 47%, 80%));">Cache Settings</h3>';
+      
+      const cacheContent = document.createElement('div');
+      cacheContent.style.display = 'flex';
+      cacheContent.style.flexDirection = 'column';
+      cacheContent.style.gap = '16px';
+      
+      // Disable cache toggle
+      const cacheToggleContainer = document.createElement('div');
+      cacheToggleContainer.style.display = 'flex';
+      cacheToggleContainer.style.alignItems = 'center';
+      cacheToggleContainer.style.gap = '12px';
+      
+      const cacheCheckbox = document.createElement('input');
+      cacheCheckbox.type = 'checkbox';
+      cacheCheckbox.id = 'disableCacheCheckbox';
+      cacheCheckbox.style.transform = 'scale(1.2)';
+      
+      // Get current setting from opener window
+      const currentSettings = window.opener?.VRCXExtended?.Config?.getSettings?.() || {};
+      cacheCheckbox.checked = currentSettings.disableCache || false;
+      
+      const cacheLabel = document.createElement('label');
+      cacheLabel.htmlFor = 'disableCacheCheckbox';
+      cacheLabel.style.cursor = 'pointer';
+      cacheLabel.style.userSelect = 'none';
+      cacheLabel.textContent = 'Disable module caching (for development)';
+      
+      cacheCheckbox.addEventListener('change', () => {
+        if (window.opener?.VRCXExtended?.Config?.setSetting) {
+          window.opener.VRCXExtended.Config.setSetting('disableCache', cacheCheckbox.checked);
+          
+          if (window.opener?.VRCXExtended?.Utils?.showNotification) {
+            window.opener.VRCXExtended.Utils.showNotification(
+              cacheCheckbox.checked ? 'Module caching disabled' : 'Module caching enabled',
+              'success'
+            );
+          }
+        }
+      });
+      
+      cacheToggleContainer.appendChild(cacheCheckbox);
+      cacheToggleContainer.appendChild(cacheLabel);
+      
+      const cacheInfo = document.createElement('div');
+      cacheInfo.className = 'muted';
+      cacheInfo.style.fontSize = '13px';
+      cacheInfo.textContent = 'When disabled, modules will always be downloaded fresh instead of using cached versions. Useful for development but slower loading.';
+      
+      // Clear cache button
+      const clearCacheBtn = document.createElement('button');
+      clearCacheBtn.className = 'btn';
+      clearCacheBtn.style.backgroundColor = 'var(--accent-1, #66b1ff)';
+      clearCacheBtn.style.borderColor = 'var(--accent-1, #66b1ff)';
+      clearCacheBtn.style.color = 'var(--text-0, #282828)';
+      clearCacheBtn.style.alignSelf = 'flex-start';
+      clearCacheBtn.textContent = '🗑️ Clear Module Cache';
+      
+      clearCacheBtn.addEventListener('click', () => {
+        if (window.opener?.VRCXExtended?.ModuleSystem?.clearAllCache) {
+          const clearedCount = window.opener.VRCXExtended.ModuleSystem.clearAllCache();
+          if (clearedCount > 0) {
+            alert('Successfully cleared ' + clearedCount + ' cached modules.');
+          } else {
+            alert('No cached modules found to clear.');
+          }
+        } else {
+          alert('Cache clearing not available.');
+        }
+      });
+      
+      cacheContent.appendChild(cacheToggleContainer);
+      cacheContent.appendChild(cacheInfo);
+      cacheContent.appendChild(clearCacheBtn);
+      cacheCard.appendChild(cacheTitle);
+      cacheCard.appendChild(cacheContent);
+      
+      // Storage Management Card
       const storageCard = document.createElement('div');
       storageCard.className = 'card';
       
@@ -362,6 +447,8 @@ window.VRCXExtended.Popup = {
       storageContent.appendChild(resetBtn);
       storageCard.appendChild(storageTitle);
       storageCard.appendChild(storageContent);
+      
+      settingsContainer.appendChild(cacheCard);
       settingsContainer.appendChild(storageCard);
       listElement.appendChild(settingsContainer);
     },

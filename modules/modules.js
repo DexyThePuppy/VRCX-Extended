@@ -39,7 +39,7 @@ window.VRCXExtended.ModuleSystem = {
         // Cache configuration
         cache: {
             maxAge: 24 * 60 * 60 * 1000, // 24 hours
-            version: '5.1'
+            version: '5.1.1' // Incremented to bust cache after Utils fix
         },
         
         // Loading timeouts
@@ -95,6 +95,12 @@ window.VRCXExtended.ModuleSystem = {
      */
     getCachedModule(src) {
         try {
+            // Check if caching is disabled
+            if (window.VRCXExtended?.Config?.getSetting?.('disableCache')) {
+                console.log('🚫 Cache disabled, skipping cache lookup for:', src);
+                return null;
+            }
+
             const cacheKey = `vrcx_module_${btoa(src).replace(/[^a-zA-Z0-9]/g, '')}`;
             const cached = localStorage.getItem(cacheKey);
             
@@ -123,6 +129,12 @@ window.VRCXExtended.ModuleSystem = {
      */
     cacheModule(src, content) {
         try {
+            // Check if caching is disabled
+            if (window.VRCXExtended?.Config?.getSetting?.('disableCache')) {
+                console.log('🚫 Cache disabled, skipping cache write for:', src);
+                return;
+            }
+
             const cacheKey = `vrcx_module_${btoa(src).replace(/[^a-zA-Z0-9]/g, '')}`;
             const cacheData = {
                 content,
@@ -295,6 +307,34 @@ window.VRCXExtended.ModuleSystem = {
     },
 
     /**
+     * Clear all VRCX-Extended module cache
+     */
+    clearAllCache() {
+        try {
+            const keys = Object.keys(localStorage);
+            const moduleKeys = keys.filter(key => key.startsWith('vrcx_module_'));
+            
+            moduleKeys.forEach(key => {
+                localStorage.removeItem(key);
+            });
+            
+            console.log(`🗑️ Cleared ${moduleKeys.length} cached modules`);
+            
+            if (window.VRCXExtended?.Utils?.showNotification) {
+                window.VRCXExtended.Utils.showNotification(
+                    `Cache cleared (${moduleKeys.length} items)`, 
+                    'success'
+                );
+            }
+            
+            return moduleKeys.length;
+        } catch (error) {
+            console.warn('Failed to clear all cache:', error);
+            return 0;
+        }
+    },
+
+    /**
      * Load all modules with smart parallel/sequential loading
      * @returns {Promise} Promise that resolves when all modules are loaded
      */
@@ -423,6 +463,12 @@ window.VRCXExtended.ModuleSystem = {
 
         try {
             console.log('🚀 Initializing VRCX-Extended system...');
+            console.log('🔍 Utils module debug info:', {
+                exists: !!Utils,
+                type: typeof Utils,
+                hasEnsureNotyAvailable: Utils && typeof Utils.ensureNotyAvailable === 'function',
+                availableFunctions: Utils ? Object.keys(Utils).filter(key => typeof Utils[key] === 'function') : []
+            });
             
             // 0. Ensure Noty is available for global use
             console.log('📋 Step 0: Ensuring Noty library is available...');
@@ -431,13 +477,19 @@ window.VRCXExtended.ModuleSystem = {
                 
                 // Check if Utils.ensureNotyAvailable exists before calling it
                 if (Utils && typeof Utils.ensureNotyAvailable === 'function') {
+                    console.log('📋 Calling Utils.ensureNotyAvailable...');
                     await Utils.ensureNotyAvailable();
                     console.log('📋 After ensureNotyAvailable, Noty status:', typeof Noty !== 'undefined');
                 } else {
                     console.warn('⚠️ Utils.ensureNotyAvailable not available, checking for Noty directly');
+                    console.warn('⚠️ Utils exists:', !!Utils, 'ensureNotyAvailable type:', Utils ? typeof Utils.ensureNotyAvailable : 'Utils not available');
+                    
                     // Try to set up Noty if it's available but not detected properly
                     if (window.noty || window.Noty) {
                         window.Noty = window.Noty || window.noty;
+                        console.log('📋 Found existing Noty, setting up global reference');
+                    } else {
+                        console.log('📋 No existing Noty found in window.noty or window.Noty');
                     }
                 }
                 

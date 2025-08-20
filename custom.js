@@ -17,7 +17,7 @@
 
     // System information
     const SYSTEM_INFO = {
-        version: '5.1',
+        version: '5.1.1',
         loadedAt: new Date().toISOString(),
         userAgent: navigator.userAgent,
         url: window.location.href

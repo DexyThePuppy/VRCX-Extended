@@ -14,6 +14,13 @@ window.VRCXExtended.Config = {
   KEYS: {
     PLUGINS: 'vrcx_mm_plugins',
     THEMES: 'vrcx_mm_themes',
+    SETTINGS: 'vrcx_extended_settings',
+  },
+
+  // Default settings
+  DEFAULT_SETTINGS: {
+    disableCache: false,
+    debugMode: false,
   },
 
   // UI Constants
@@ -62,5 +69,55 @@ window.VRCXExtended.Config = {
       code: '/* Your CSS code here */\n.example {\n  color: #ff6b35;\n}',
       description: 'Custom CSS theme for VRCX'
     }
+  },
+
+  // Settings management
+  /**
+   * Get current settings with defaults
+   * @returns {Object} Current settings
+   */
+  getSettings() {
+    try {
+      const stored = localStorage.getItem(this.KEYS.SETTINGS);
+      const settings = stored ? JSON.parse(stored) : {};
+      return { ...this.DEFAULT_SETTINGS, ...settings };
+    } catch (error) {
+      console.warn('Failed to load settings, using defaults:', error);
+      return { ...this.DEFAULT_SETTINGS };
+    }
+  },
+
+  /**
+   * Update settings
+   * @param {Object} newSettings - Settings to update
+   */
+  updateSettings(newSettings) {
+    try {
+      const currentSettings = this.getSettings();
+      const updatedSettings = { ...currentSettings, ...newSettings };
+      localStorage.setItem(this.KEYS.SETTINGS, JSON.stringify(updatedSettings));
+      console.log('✅ Settings updated:', updatedSettings);
+    } catch (error) {
+      console.error('Failed to update settings:', error);
+    }
+  },
+
+  /**
+   * Get a specific setting value
+   * @param {string} key - Setting key
+   * @returns {*} Setting value
+   */
+  getSetting(key) {
+    const settings = this.getSettings();
+    return settings[key];
+  },
+
+  /**
+   * Set a specific setting value
+   * @param {string} key - Setting key
+   * @param {*} value - Setting value
+   */
+  setSetting(key, value) {
+    this.updateSettings({ [key]: value });
   }
 };
