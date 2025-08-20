@@ -60,6 +60,37 @@ window.VRCXExtended.Utils = {
     return (b.updatedAt || '').localeCompare(a.updatedAt || '');
   },
 
+  /**
+   * Show notification using VRCX's native Noty system
+   * @param {string} message - Notification message
+   * @param {string} type - Notification type (info, success, error, warning)
+   * @param {number} timeout - Auto-close timeout in milliseconds (optional)
+   */
+  showNotification(message, type = 'info', timeout = null) {
+    // VRCX uses Noty directly - simple and clean approach
+    if (typeof Noty !== 'undefined') {
+      const notyTimeout = timeout !== null ? timeout : 
+                         type === 'error' ? 6000 : 
+                         type === 'warning' ? 5000 : 4000;
+
+      new Noty({
+        type: type,
+        text: message,
+        timeout: notyTimeout
+      }).show();
+      
+      return;
+    }
+    
+    // Fallback for non-VRCX environments (like popup window)
+    this.showFallbackNotification(message, type, timeout);
+  },
+
+  /**
+   * Show success notification with VRCX Noty
+   * @param {string} message - Success message
+   * @param {number} timeout - Auto-close timeout (default: 4000ms)
+   */
   showSuccessNotification(message, timeout = 4000) {
     if (typeof Noty !== 'undefined') {
       new Noty({
@@ -68,20 +99,7 @@ window.VRCXExtended.Utils = {
         timeout: timeout
       }).show();
     } else {
-      // Try to load Noty, then fallback if it fails
-      this.ensureNotyAvailable().then(() => {
-        if (typeof Noty !== 'undefined') {
-          new Noty({
-            type: 'success',
-            text: message,
-            timeout: timeout
-          }).show();
-        } else {
-          this.showFallbackNotification(message, 'success', timeout);
-        }
-      }).catch(() => {
-        this.showFallbackNotification(message, 'success', timeout);
-      });
+      this.showFallbackNotification(message, 'success', timeout);
     }
   },
 
@@ -98,20 +116,7 @@ window.VRCXExtended.Utils = {
         timeout: timeout
       }).show();
     } else {
-      // Try to load Noty, then fallback if it fails
-      this.ensureNotyAvailable().then(() => {
-        if (typeof Noty !== 'undefined') {
-          new Noty({
-            type: 'error',
-            text: message,
-            timeout: timeout
-          }).show();
-        } else {
-          this.showFallbackNotification(message, 'error', timeout);
-        }
-      }).catch(() => {
-        this.showFallbackNotification(message, 'error', timeout);
-      });
+      this.showFallbackNotification(message, 'error', timeout);
     }
   },
 
@@ -129,25 +134,8 @@ window.VRCXExtended.Utils = {
         closeWith: []
       }).show();
     } else {
-      // Try to load Noty, then fallback if it fails
-      this.ensureNotyAvailable().then(() => {
-        if (typeof Noty !== 'undefined') {
-          return new Noty({
-            type: 'info',
-            text: `<i class="fa fa-spinner fa-spin"></i> ${message}`,
-            timeout: false,
-            closeWith: []
-          }).show();
-        } else {
-          this.showFallbackNotification(`⏳ ${message}`, 'info', false);
-          return null;
-        }
-      }).catch(() => {
-        this.showFallbackNotification(`⏳ ${message}`, 'info', false);
-        return null;
-      });
-      
-      // Return null for now since this is async
+      // Fallback - show info notification that auto-closes
+      this.showFallbackNotification(`⏳ ${message}`, 'info', false);
       return null;
     }
   },
@@ -344,59 +332,5 @@ window.VRCXExtended.Utils = {
       });
       return clonedObj;
     }
-  },
-
-  /**
-   * Ensure Noty library is available by trying to load it
-   * @returns {Promise} Promise that resolves when Noty is available
-   */
-  async ensureNotyAvailable() {
-    // Check if Noty is already available
-    if (typeof Noty !== 'undefined') {
-      return Promise.resolve();
-    }
-
-    // Check if we can access VRCX's bundled Noty
-    if (window.noty || window.Noty) {
-      window.Noty = window.Noty || window.noty;
-      return Promise.resolve();
-    }
-
-    // Try loading from CDN as last resort
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/noty@3.2.0-beta-deprecated/lib/noty.min.js';
-      
-      script.onload = () => {
-        // Set VRCX-style defaults if Noty loaded successfully
-        if (typeof Noty !== 'undefined') {
-          try {
-            Noty.overrideDefaults({
-              animation: {
-                open: 'animate__animated animate__bounceInLeft',
-                close: 'animate__animated animate__bounceOutLeft'
-              },
-              layout: 'bottomLeft',
-              theme: 'mint',
-              timeout: 6000
-            });
-            console.log('✅ Noty loaded and configured with VRCX defaults');
-            resolve();
-          } catch (error) {
-            console.warn('Noty loaded but failed to set defaults:', error);
-            resolve(); // Still resolve since Noty is available
-          }
-        } else {
-          reject(new Error('Noty failed to load properly'));
-        }
-      };
-      
-      script.onerror = () => {
-        console.warn('Failed to load Noty from CDN - using fallback notifications');
-        reject(new Error('Failed to load Noty from CDN'));
-      };
-      
-      document.head.appendChild(script);
-    });
   }
 };
