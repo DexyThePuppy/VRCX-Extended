@@ -223,7 +223,7 @@ window.VRCXExtended.Utils = {
    * @param {boolean} isEnabled - Whether item was enabled or disabled
    * @param {boolean} isSuccess - Whether the operation was successful
    */
-  showNotification(itemName, itemType, isEnabled, isSuccess = true) {
+  showToggleNotification(itemName, itemType, isEnabled, isSuccess = true) {
     const action = isEnabled ? 'enabled' : 'disabled';
     const message = isSuccess 
       ? `${itemType} <strong>${this.escapeHtml(itemName)}</strong> ${action}` 
