@@ -60,55 +60,6 @@ window.VRCXExtended.Utils = {
     return (b.updatedAt || '').localeCompare(a.updatedAt || '');
   },
 
-  /**
-   * Show notification using VRCX's native Noty system
-   * @param {string} message - Notification message
-   * @param {string} type - Notification type (info, success, error, warning)
-   * @param {number} timeout - Auto-close timeout in milliseconds (optional)
-   */
-  showNotification(message, type = 'info', timeout = null) {
-    // Try VRCX native Noty first
-    if (typeof Noty !== 'undefined') {
-      const notyTimeout = timeout !== null ? timeout : 
-                         type === 'error' ? 6000 : 
-                         type === 'warning' ? 5000 : 4000;
-
-      new Noty({
-        type: type,
-        text: message,
-        timeout: notyTimeout
-      }).show();
-      
-      return;
-    }
-    
-    // Try to load Noty if not available
-    this.ensureNotyAvailable().then(() => {
-      if (typeof Noty !== 'undefined') {
-        const notyTimeout = timeout !== null ? timeout : 
-                           type === 'error' ? 6000 : 
-                           type === 'warning' ? 5000 : 4000;
-
-        new Noty({
-          type: type,
-          text: message,
-          timeout: notyTimeout
-        }).show();
-      } else {
-        // Final fallback to custom notification system
-        this.showFallbackNotification(message, type, timeout);
-      }
-    }).catch(() => {
-      // If loading fails, use fallback
-      this.showFallbackNotification(message, type, timeout);
-    });
-  },
-
-  /**
-   * Show success notification with VRCX Noty
-   * @param {string} message - Success message
-   * @param {number} timeout - Auto-close timeout (default: 4000ms)
-   */
   showSuccessNotification(message, timeout = 4000) {
     if (typeof Noty !== 'undefined') {
       new Noty({
