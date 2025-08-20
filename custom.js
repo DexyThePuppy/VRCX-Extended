@@ -139,14 +139,19 @@
             
             if (!initSuccess) {
                 console.warn('⚠️ System initialization had issues, but may still function');
-                if (typeof window.Noty !== 'undefined') {
-                    new window.Noty({
+                if (typeof Noty !== 'undefined') {
+                    new Noty({
                         type: 'warning',
                         text: '⚠️ VRCX-Extended loaded with some issues',
-                        timeout: 5000,
-                        layout: 'bottomLeft',
-                        theme: 'mint'
+                        timeout: 5000
                     }).show();
+                }
+            } else {
+                // Verify Noty is available for global use
+                if (typeof Noty !== 'undefined') {
+                    console.log('🎯 Noty is now globally available - you can use: new Noty({type: "success", text: "Hello!"}).show()');
+                } else {
+                    console.log('⚠️ Noty not globally available - use VRCXExtended.Utils methods instead');
                 }
             }
             
@@ -154,16 +159,14 @@
             console.error('❌ VRCX-Extended startup failed:', error);
             
             // Show error notification
-            if (typeof window.Noty !== 'undefined') {
-                new window.Noty({
+            if (typeof Noty !== 'undefined') {
+                new Noty({
                     type: 'error',
                     text: `❌ VRCX-Extended failed to load: ${error.message}`,
                     timeout: 8000,
-                    layout: 'bottomLeft',
-                    theme: 'mint',
                     closeWith: ['click', 'button'],
                     buttons: [
-                        window.Noty.button('Troubleshoot', 'btn btn-primary btn-sm', function() {
+                        Noty.button('Troubleshoot', 'btn btn-primary btn-sm', function() {
                             const userMessage = `VRCX-Extended failed to load.
 
 Error: ${error.message}
