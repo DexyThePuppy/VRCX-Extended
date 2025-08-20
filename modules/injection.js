@@ -78,48 +78,6 @@ window.VRCXExtended.Injection = {
   },
 
   /**
-   * Refresh only themes
-   */
-  refreshThemes() {
-    const config = window.VRCXExtended.Config;
-    const utils = window.VRCXExtended.Utils;
-    
-    const themes = utils.readJSON(config.KEYS.THEMES, []);
-    const injectedThemes = this.injectThemes(themes);
-    
-    // Show theme injection notification
-    if (injectedThemes.length > 0 && typeof Noty !== 'undefined') {
-      const message = 'Themes refreshed: <strong>' + injectedThemes.join(', ') + '</strong>';
-      new Noty({
-        type: 'success',
-        text: message,
-        timeout: 4000
-      }).show();
-    }
-  },
-
-  /**
-   * Refresh only plugins
-   */
-  refreshPlugins() {
-    const config = window.VRCXExtended.Config;
-    const utils = window.VRCXExtended.Utils;
-    
-    const plugins = utils.readJSON(config.KEYS.PLUGINS, []);
-    const injectedPlugins = this.injectPlugins(plugins);
-    
-    // Show plugin injection notification
-    if (injectedPlugins.length > 0 && typeof Noty !== 'undefined') {
-      const message = 'Plugins refreshed: <strong>' + injectedPlugins.join(', ') + '</strong>';
-      new Noty({
-        type: 'success',
-        text: message,
-        timeout: 4000
-      }).show();
-    }
-  },
-
-  /**
    * Show notifications for successfully injected content
    * @param {Array} injectedThemes - Array of injected theme names
    * @param {Array} injectedPlugins - Array of injected plugin names
