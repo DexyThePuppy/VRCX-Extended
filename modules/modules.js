@@ -58,13 +58,43 @@ window.VRCXExtended.ModuleSystem = {
     },
 
     /**
+     * Get repository configuration based on debug mode
+     * @returns {Object} Repository config with baseUrl and paths
+     */
+    getRepositoryConfig() {
+        const isDebugMode = window.VRCXExtended?.Config?.getSetting?.('debugMode') || false;
+        
+        if (isDebugMode) {
+            const localPaths = window.VRCXExtended?.Config?.getSetting?.('localDebugPaths') || {};
+            console.log('🔧 Debug mode enabled - using local file paths:', localPaths);
+            return {
+                baseUrl: '',
+                paths: {
+                    modules: localPaths.modules || 'file://vrcx/extended/modules',
+                    html: localPaths.html || 'file://vrcx/extended/html',
+                    stylesheets: localPaths.stylesheets || 'file://vrcx/extended/stylesheet'
+                }
+            };
+        }
+        
+        return this.config.repository;
+    },
+
+    /**
      * Build URL for a specific resource type
      * @param {string} type - Resource type ('modules', 'html', 'stylesheets')
      * @param {string} filename - Filename to append
      * @returns {string} Complete URL
      */
     buildUrl(type, filename) {
-        const { baseUrl, paths } = this.config.repository;
+        const repoConfig = this.getRepositoryConfig();
+        const { baseUrl, paths } = repoConfig;
+        
+        // For local file paths, don't add baseUrl
+        if (baseUrl === '') {
+            return `${paths[type]}/${filename}`;
+        }
+        
         return `${baseUrl}/${paths[type]}/${filename}`;
     },
 
@@ -339,9 +369,17 @@ window.VRCXExtended.ModuleSystem = {
      * @returns {Promise} Promise that resolves when all modules are loaded
      */
     async loadAllModules() {
-        console.log('🔄 Loading VRCX-Extended modules from GitHub...');
-        console.log(`📍 Repository: ${this.config.repository.baseUrl}`);
-        console.log(`📁 Modules path: ${this.config.repository.paths.modules}`);
+        const repoConfig = this.getRepositoryConfig();
+        const isDebugMode = window.VRCXExtended?.Config?.getSetting?.('debugMode') || false;
+        
+        if (isDebugMode) {
+            console.log('🔧 Loading VRCX-Extended modules from local debug paths...');
+            console.log(`📍 Debug paths:`, repoConfig.paths);
+        } else {
+            console.log('🔄 Loading VRCX-Extended modules from GitHub...');
+            console.log(`📍 Repository: ${this.config.repository.baseUrl}`);
+            console.log(`📁 Modules path: ${this.config.repository.paths.modules}`);
+        }
         
         // Show loading notification
         this.showLoadingNotification();

@@ -31,7 +31,14 @@
     const CONFIG = {
         baseUrl: 'https://raw.githubusercontent.com/DexyThePuppy/VRCX-Extended/refs/heads/main/modules/',
         moduleSystemFile: 'modules.js',
-        timeout: 15000
+        timeout: 15000,
+        // Debug mode configuration
+        debugMode: false, // Set to true to enable debug mode (or use the settings UI)
+        localDebugPaths: {
+            modules: 'file://vrcx/extended/modules',
+            html: 'file://vrcx/extended/html',
+            stylesheets: 'file://vrcx/extended/stylesheet'
+        }
     };
 
     /**
@@ -82,6 +89,35 @@
     }
 
     /**
+     * Initialize debug settings if debug mode is enabled
+     */
+    function initializeDebugSettings() {
+        if (CONFIG.debugMode) {
+            console.log('🔧 Debug mode enabled - initializing local file paths...');
+            
+            // Create a temporary Config object if it doesn't exist yet
+            if (!window.VRCXExtended) {
+                window.VRCXExtended = {};
+            }
+            
+            if (!window.VRCXExtended.Config) {
+                window.VRCXExtended.Config = {
+                    getSetting: (key) => {
+                        if (key === 'debugMode') return CONFIG.debugMode;
+                        if (key === 'localDebugPaths') return CONFIG.localDebugPaths;
+                        return null;
+                    }
+                };
+            }
+            
+            console.log('🔧 Debug settings initialized:', {
+                debugMode: CONFIG.debugMode,
+                localPaths: CONFIG.localDebugPaths
+            });
+        }
+    }
+
+    /**
      * Main initialization with retry logic
      */
     async function main() {
@@ -94,6 +130,9 @@
             }
 
             console.log('📦 Starting VRCX-Extended...');
+            
+            // Initialize debug settings if enabled
+            initializeDebugSettings();
             
             // Load module system with retries
             let retryCount = 0;

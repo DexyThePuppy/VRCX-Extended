@@ -21,6 +21,11 @@ window.VRCXExtended.Config = {
   DEFAULT_SETTINGS: {
     disableCache: false,
     debugMode: false,
+    localDebugPaths: {
+      modules: 'file://vrcx/extended/modules',
+      html: 'file://vrcx/extended/html', 
+      stylesheets: 'file://vrcx/extended/stylesheet'
+    }
   },
 
   // UI Constants

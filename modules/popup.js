@@ -412,6 +412,81 @@ window.VRCXExtended.Popup = {
       cacheCard.appendChild(cacheTitle);
       cacheCard.appendChild(cacheContent);
       
+      // Debug Mode Settings Card
+      const debugCard = document.createElement('div');
+      debugCard.className = 'card';
+      debugCard.style.marginBottom = '20px';
+      
+      const debugTitle = document.createElement('div');
+      debugTitle.className = 'card-title';
+      debugTitle.innerHTML = '<h3 style="margin: 0; color: var(--text-2, hsl(38, 47%, 80%));">Debug Mode</h3>';
+      
+      const debugContent = document.createElement('div');
+      debugContent.style.display = 'flex';
+      debugContent.style.flexDirection = 'column';
+      debugContent.style.gap = '16px';
+      
+      // Debug mode toggle
+      const debugToggleContainer = document.createElement('div');
+      debugToggleContainer.style.display = 'flex';
+      debugToggleContainer.style.alignItems = 'center';
+      debugToggleContainer.style.gap = '12px';
+      
+      const debugCheckbox = document.createElement('input');
+      debugCheckbox.type = 'checkbox';
+      debugCheckbox.id = 'debugModeCheckbox';
+      debugCheckbox.style.transform = 'scale(1.2)';
+      
+      // Get current debug setting
+      debugCheckbox.checked = currentSettings.debugMode || false;
+      
+      const debugLabel = document.createElement('label');
+      debugLabel.htmlFor = 'debugModeCheckbox';
+      debugLabel.style.cursor = 'pointer';
+      debugLabel.style.userSelect = 'none';
+      debugLabel.textContent = 'Enable debug mode (load from local files)';
+      
+      debugCheckbox.addEventListener('change', () => {
+        if (window.opener?.VRCXExtended?.Config?.setSetting) {
+          window.opener.VRCXExtended.Config.setSetting('debugMode', debugCheckbox.checked);
+          
+          if (window.opener?.VRCXExtended?.Utils?.showNotification) {
+            window.opener.VRCXExtended.Utils.showNotification(
+              debugCheckbox.checked ? 'Debug mode enabled - will load from local files' : 'Debug mode disabled - will load from GitHub',
+              'success'
+            );
+          }
+        }
+      });
+      
+      debugToggleContainer.appendChild(debugCheckbox);
+      debugToggleContainer.appendChild(debugLabel);
+      
+      const debugInfo = document.createElement('div');
+      debugInfo.className = 'muted';
+      debugInfo.style.fontSize = '13px';
+      debugInfo.innerHTML = 'When enabled, VRCX-Extended will load modules from local file paths instead of GitHub. This requires the files to be available at:<br><br><code>file://vrcx/extended/modules/</code><br><code>file://vrcx/extended/html/</code><br><code>file://vrcx/extended/stylesheet/</code><br><br><strong>Note:</strong> You must refresh the page after changing this setting.';
+      
+      // Local paths info
+      const pathsInfo = document.createElement('div');
+      pathsInfo.style.backgroundColor = 'var(--surface-1, #32302f)';
+      pathsInfo.style.padding = '12px';
+      pathsInfo.style.borderRadius = '6px';
+      pathsInfo.style.fontFamily = 'monospace';
+      pathsInfo.style.fontSize = '12px';
+      pathsInfo.style.color = 'var(--text-2, hsl(38, 47%, 80%))';
+      pathsInfo.innerHTML = 
+        '<strong>Local Debug Paths:</strong><br>' +
+        'Modules: file://vrcx/extended/modules/<br>' +
+        'HTML: file://vrcx/extended/html/<br>' +
+        'Stylesheets: file://vrcx/extended/stylesheet/';
+      
+      debugContent.appendChild(debugToggleContainer);
+      debugContent.appendChild(debugInfo);
+      debugContent.appendChild(pathsInfo);
+      debugCard.appendChild(debugTitle);
+      debugCard.appendChild(debugContent);
+      
       // Storage Management Card
       const storageCard = document.createElement('div');
       storageCard.className = 'card';
@@ -457,6 +532,7 @@ window.VRCXExtended.Popup = {
       storageCard.appendChild(storageContent);
       
       settingsContainer.appendChild(cacheCard);
+      settingsContainer.appendChild(debugCard);
       settingsContainer.appendChild(storageCard);
       listElement.appendChild(settingsContainer);
     },
