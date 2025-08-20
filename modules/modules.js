@@ -470,16 +470,10 @@ window.VRCXExtended.ModuleSystem = {
             Utils.safeConsoleLog('info', 'All modules loaded and system is ready');
             
             // Show final success notification
-            const NotyClass = (typeof Noty !== 'undefined') ? Noty : 
-                              (typeof window.Noty !== 'undefined') ? window.Noty : null;
-            
-            if (NotyClass) {
-                new NotyClass({
+            if (typeof Noty !== 'undefined') {
+                new Noty({
                     type: 'success',
-                    text: '🎉 VRCX-Extended loaded successfully!',
-                    timeout: 4000,
-                    layout: 'bottomLeft',
-                    theme: 'mint'
+                    text: '🎉 VRCX-Extended loaded successfully!'
                 }).show();
             }
             
@@ -496,21 +490,13 @@ window.VRCXExtended.ModuleSystem = {
                 // Try multiple notification methods
                 if (window.VRCXExtended?.Utils?.showNotification) {
                     window.VRCXExtended.Utils.showNotification(errorMsg, 'error');
-                } else {
-                    const NotyClass = (typeof Noty !== 'undefined') ? Noty : 
-                                      (typeof window.Noty !== 'undefined') ? window.Noty : null;
-                    
-                    if (NotyClass) {
-                        new NotyClass({
-                            type: 'error',
-                            text: errorMsg,
-                            timeout: 8000,
-                            layout: 'bottomLeft',
-                            theme: 'mint'
-                        }).show();
-                    } else if (typeof alert !== 'undefined') {
-                        alert(errorMsg);
-                    }
+                } else if (typeof Noty !== 'undefined') {
+                    new Noty({
+                        type: 'error',
+                        text: errorMsg
+                    }).show();
+                } else if (typeof alert !== 'undefined') {
+                    alert(errorMsg);
                 }
             } catch (finalError) {
                 console.error('❌ Even error reporting failed:', finalError);
@@ -522,17 +508,12 @@ window.VRCXExtended.ModuleSystem = {
 
     // Notification methods
     showLoadingNotification() {
-        const NotyClass = (typeof Noty !== 'undefined') ? Noty : 
-                          (typeof window.Noty !== 'undefined') ? window.Noty : null;
-        
-        if (NotyClass) {
-            this.state.loadingNotification = new NotyClass({
+        if (typeof Noty !== 'undefined') {
+            this.state.loadingNotification = new Noty({
                 type: 'info',
                 text: '<i class="fa fa-spinner fa-spin"></i> Loading VRCX-Extended modules...',
                 timeout: false,
-                closeWith: [],
-                layout: 'bottomLeft',
-                theme: 'mint'
+                closeWith: []
             }).show();
         }
     },
@@ -545,47 +526,29 @@ window.VRCXExtended.ModuleSystem = {
     },
 
     showSuccessNotification() {
-        const NotyClass = (typeof Noty !== 'undefined') ? Noty : 
-                          (typeof window.Noty !== 'undefined') ? window.Noty : null;
-        
-        if (NotyClass) {
-            new NotyClass({
+        if (typeof Noty !== 'undefined') {
+            new Noty({
                 type: 'success',
-                text: '✅ All VRCX-Extended modules loaded successfully!',
-                timeout: 4000,
-                layout: 'bottomLeft',
-                theme: 'mint'
+                text: '✅ All VRCX-Extended modules loaded successfully!'
             }).show();
         }
     },
 
     showPartialFailureNotification() {
-        const NotyClass = (typeof Noty !== 'undefined') ? Noty : 
-                          (typeof window.Noty !== 'undefined') ? window.Noty : null;
-        
-        if (NotyClass) {
+        if (typeof Noty !== 'undefined') {
             const totalModules = this.config.dependencyGroups.flat().length;
-            new NotyClass({
+            new Noty({
                 type: 'warning',
-                text: `⚠️ Some VRCX-Extended modules failed to load (${this.state.failedModules.length}/${totalModules})`,
-                timeout: 6000,
-                layout: 'bottomLeft',
-                theme: 'mint'
+                text: `⚠️ Some VRCX-Extended modules failed to load (${this.state.failedModules.length}/${totalModules})`
             }).show();
         }
     },
 
     showCriticalErrorNotification(criticalFailures) {
-        const NotyClass = (typeof Noty !== 'undefined') ? Noty : 
-                          (typeof window.Noty !== 'undefined') ? window.Noty : null;
-        
-        if (NotyClass) {
-            new NotyClass({
+        if (typeof Noty !== 'undefined') {
+            new Noty({
                 type: 'error',
-                text: `❌ Critical VRCX-Extended modules failed: ${criticalFailures.join(', ')}`,
-                timeout: 8000,
-                layout: 'bottomLeft',
-                theme: 'mint'
+                text: `❌ Critical VRCX-Extended modules failed: ${criticalFailures.join(', ')}`
             }).show();
         }
     },

@@ -67,26 +67,16 @@ window.VRCXExtended.Utils = {
    * @param {number} timeout - Auto-close timeout in milliseconds (optional)
    */
   showNotification(message, type = 'info', timeout = null) {
-    // Check if we're in VRCX environment with Noty available
-    // VRCX uses Noty directly, not window.Noty
-    const NotyClass = (typeof Noty !== 'undefined') ? Noty : 
-                      (typeof window.Noty !== 'undefined') ? window.Noty : null;
-    
-    if (NotyClass) {
-      const notyType = type === 'error' ? 'error' : 
-                      type === 'success' ? 'success' : 
-                      type === 'warning' ? 'warning' : 'info';
-      
+    // VRCX uses Noty directly - simple and clean approach
+    if (typeof Noty !== 'undefined') {
       const notyTimeout = timeout !== null ? timeout : 
                          type === 'error' ? 6000 : 
                          type === 'warning' ? 5000 : 4000;
 
-      new NotyClass({
-        type: notyType,
+      new Noty({
+        type: type,
         text: message,
-        timeout: notyTimeout,
-        layout: 'bottomLeft',
-        theme: 'mint'
+        timeout: notyTimeout
       }).show();
       
       return;
@@ -102,16 +92,11 @@ window.VRCXExtended.Utils = {
    * @param {number} timeout - Auto-close timeout (default: 4000ms)
    */
   showSuccessNotification(message, timeout = 4000) {
-    const NotyClass = (typeof Noty !== 'undefined') ? Noty : 
-                      (typeof window.Noty !== 'undefined') ? window.Noty : null;
-    
-    if (NotyClass) {
-      new NotyClass({
+    if (typeof Noty !== 'undefined') {
+      new Noty({
         type: 'success',
         text: message,
-        timeout: timeout,
-        layout: 'bottomLeft',
-        theme: 'mint'
+        timeout: timeout
       }).show();
     } else {
       this.showFallbackNotification(message, 'success', timeout);
@@ -124,16 +109,11 @@ window.VRCXExtended.Utils = {
    * @param {number} timeout - Auto-close timeout (default: 6000ms)
    */
   showErrorNotification(message, timeout = 6000) {
-    const NotyClass = (typeof Noty !== 'undefined') ? Noty : 
-                      (typeof window.Noty !== 'undefined') ? window.Noty : null;
-    
-    if (NotyClass) {
-      new NotyClass({
+    if (typeof Noty !== 'undefined') {
+      new Noty({
         type: 'error',
         text: message,
-        timeout: timeout,
-        layout: 'bottomLeft',
-        theme: 'mint'
+        timeout: timeout
       }).show();
     } else {
       this.showFallbackNotification(message, 'error', timeout);
@@ -146,17 +126,12 @@ window.VRCXExtended.Utils = {
    * @returns {Object|null} Noty instance for later updating/closing
    */
   showLoadingNotification(message) {
-    const NotyClass = (typeof Noty !== 'undefined') ? Noty : 
-                      (typeof window.Noty !== 'undefined') ? window.Noty : null;
-    
-    if (NotyClass) {
-      return new NotyClass({
+    if (typeof Noty !== 'undefined') {
+      return new Noty({
         type: 'info',
         text: `<i class="fa fa-spinner fa-spin"></i> ${message}`,
         timeout: false,
-        closeWith: [],
-        layout: 'bottomLeft',
-        theme: 'mint'
+        closeWith: []
       }).show();
     } else {
       // Fallback - show info notification that auto-closes
