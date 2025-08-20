@@ -18,6 +18,8 @@ window.VRCXExtended.Popup = {
    */
   openManagerWindow() {
     const config = window.VRCXExtended.Config;
+    // Clear cached resources to force reload
+    this.externalResources = null;
     window.open('about:blank', config.UI.POPUP_NAME, config.UI.POPUP_FEATURES);
     setTimeout(() => this.buildManagerWindow(), 100);
   },
@@ -31,15 +33,13 @@ window.VRCXExtended.Popup = {
     if (!win) return;
 
     try {
-      // Load external resources if not cached
-      if (!this.externalResources) {
-        console.log('📋 Loading external resources for popup...');
-        this.externalResources = await window.VRCXExtended.ModuleSystem.loadExternalResources();
-      }
+      // Force reload external resources to get latest HTML
+      console.log('📋 Loading external resources for popup...');
+      this.externalResources = await window.VRCXExtended.ModuleSystem.loadExternalResources();
 
       const html = this.processHTML(this.externalResources.html, this.externalResources.css);
-    win.document.write(html);
-    win.document.close();
+      win.document.write(html);
+      win.document.close();
     } catch (error) {
       console.error('❌ Failed to build popup window:', error);
       // Fallback to basic HTML
@@ -139,6 +139,10 @@ window.VRCXExtended.Popup = {
       return document.querySelector('.sidebar .menu-item.active')?.dataset.section || 'plugins'; 
     },
     
+    getStoreSubSection() {
+      return document.querySelector('.store-subtabs .subtab.active')?.dataset.subsection || 'store-plugins';
+    },
+    
     setSection(sec) {
       document.querySelectorAll('.sidebar .menu-item').forEach(mi => 
         mi.classList.toggle('active', mi.dataset.section === sec)
@@ -146,7 +150,8 @@ window.VRCXExtended.Popup = {
       
       const titles = {
         'plugins': 'Plugins',
-        'themes': 'Themes', 
+        'themes': 'Themes',
+        'store': 'Store',
         'settings': 'Settings'
       };
       document.getElementById('sectionTitle').textContent = titles[sec] || 'Unknown';
@@ -154,6 +159,12 @@ window.VRCXExtended.Popup = {
       // Show/hide create button based on section
       const createBtn = document.getElementById('createBtn');
       createBtn.style.display = (sec === 'plugins' || sec === 'themes') ? 'inline-flex' : 'none';
+      
+      // Show/hide store subtabs
+      const storeSubtabs = document.querySelector('.store-subtabs');
+      if (storeSubtabs) {
+        storeSubtabs.style.display = sec === 'store' ? 'flex' : 'none';
+      }
       
       this.renderContent(sec);
     },
@@ -166,6 +177,9 @@ window.VRCXExtended.Popup = {
         case 'plugins':
         case 'themes':
           this.renderList(section);
+          break;
+        case 'store':
+          this.renderStore();
           break;
         case 'settings':
           this.renderSettings();
@@ -355,6 +369,281 @@ window.VRCXExtended.Popup = {
       card.appendChild(bottom);
 
       return card;
+    },
+
+    renderStore() {
+      const list = document.getElementById('list');
+      list.innerHTML = '';
+      
+      // Create store subtabs if they don't exist
+      this.createStoreSubtabs();
+      
+      // Render the current store subsection
+      const subsection = this.getStoreSubSection();
+      this.renderStoreSubsection(subsection);
+    },
+
+    createStoreSubtabs() {
+      // Check if subtabs already exist
+      if (document.querySelector('.store-subtabs')) return;
+      
+      const contentHeader = document.querySelector('.content-header');
+      const title = contentHeader.querySelector('.title');
+      
+      // Create subtabs container
+      const subtabsContainer = document.createElement('div');
+      subtabsContainer.className = 'store-subtabs';
+      subtabsContainer.style.display = 'flex';
+      subtabsContainer.style.gap = '8px';
+      
+      // Create subtab buttons
+      const pluginsTab = document.createElement('button');
+      pluginsTab.className = 'subtab active btn primary';
+      pluginsTab.dataset.subsection = 'store-plugins';
+      pluginsTab.textContent = 'Available Plugins';
+      
+      const themesTab = document.createElement('button');
+      themesTab.className = 'subtab btn';
+      themesTab.dataset.subsection = 'store-themes';
+      themesTab.textContent = 'Available Themes';
+      
+      // Add click handlers
+      [pluginsTab, themesTab].forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.subtab').forEach(t => {
+            t.classList.remove('active', 'primary');
+          });
+          tab.classList.add('active');
+          if (tab.classList.contains('active')) {
+            tab.classList.add('primary');
+          }
+          this.renderStoreSubsection(tab.dataset.subsection);
+        });
+      });
+      
+      // Update active tab styles
+      const updateActiveTab = () => {
+        document.querySelectorAll('.subtab').forEach(tab => {
+          if (tab.classList.contains('active')) {
+            tab.classList.add('primary');
+          } else {
+            tab.classList.remove('primary');
+          }
+        });
+      };
+      
+      // Initial style update
+      setTimeout(updateActiveTab, 0);
+      
+      // Add click handlers that also update styles
+      [pluginsTab, themesTab].forEach(tab => {
+        const originalClick = tab.onclick;
+        tab.onclick = (e) => {
+          if (originalClick) originalClick(e);
+          setTimeout(updateActiveTab, 0);
+        };
+      });
+      
+      subtabsContainer.appendChild(pluginsTab);
+      subtabsContainer.appendChild(themesTab);
+      
+      // Insert after title
+      title.parentNode.insertBefore(subtabsContainer, title.nextSibling);
+    },
+
+    renderStoreSubsection(subsection) {
+      const list = document.getElementById('list');
+      list.innerHTML = '';
+      
+      switch(subsection) {
+        case 'store-plugins':
+          this.renderStorePlugins();
+          break;
+        case 'store-themes':
+          this.renderStoreThemes();
+          break;
+        default:
+          list.innerHTML = '<div class="muted">Unknown store subsection</div>';
+      }
+    },
+
+    async renderStorePlugins() {
+      const list = document.getElementById('list');
+      
+      try {
+        // Load plugins from JSON file
+        const response = await fetch('store/plugins/plugins.json');
+        const plugins = await response.json();
+        
+        if (!plugins.length) {
+          list.innerHTML = '<div class="muted">No plugins available in the store.</div>';
+          return;
+        }
+        
+        plugins.forEach(plugin => {
+          const card = this.createStoreCard(plugin, 'plugin');
+          list.appendChild(card);
+        });
+        
+      } catch (error) {
+        console.error('Failed to load store plugins:', error);
+        list.innerHTML = '<div class="muted">Failed to load plugins from store.</div>';
+      }
+    },
+
+    async renderStoreThemes() {
+      const list = document.getElementById('list');
+      
+      try {
+        // Load themes from JSON file
+        const response = await fetch('store/themes/themes.json');
+        const themes = await response.json();
+        
+        if (!themes.length) {
+          list.innerHTML = '<div class="muted">No themes available in the store.</div>';
+          return;
+        }
+        
+        themes.forEach(theme => {
+          const card = this.createStoreCard(theme, 'theme');
+          list.appendChild(card);
+        });
+        
+      } catch (error) {
+        console.error('Failed to load store themes:', error);
+        list.innerHTML = '<div class="muted">Failed to load themes from store.</div>';
+      }
+    },
+
+    createStoreCard(item, type) {
+      const card = document.createElement('div');
+      card.className = 'card store-card';
+      card.style.border = '1px solid var(--surface-2, #3c3836)';
+      card.style.borderRadius = '8px';
+      card.style.padding = '16px';
+      card.style.marginBottom = '12px';
+      card.style.background = 'var(--surface-0, #282828)';
+      card.style.transition = 'all 0.2s';
+      
+      // Card content container
+      const contentContainer = document.createElement('div');
+      contentContainer.style.display = 'flex';
+      contentContainer.style.gap = '16px';
+      
+      // Thumbnail section
+      const thumbnailSection = document.createElement('div');
+      thumbnailSection.style.flexShrink = '0';
+      
+      const thumbnail = document.createElement('img');
+      thumbnail.src = item.thumbnail || 'https://via.placeholder.com/300x200/666666/ffffff?text=No+Image';
+      thumbnail.alt = item.name + ' thumbnail';
+      thumbnail.style.width = '120px';
+      thumbnail.style.height = '80px';
+      thumbnail.style.objectFit = 'cover';
+      thumbnail.style.borderRadius = '6px';
+      thumbnail.style.border = '1px solid var(--surface-2, #3c3836)';
+      
+      thumbnailSection.appendChild(thumbnail);
+      
+      // Content section
+      const contentSection = document.createElement('div');
+      contentSection.style.flex = '1';
+      contentSection.style.display = 'flex';
+      contentSection.style.flexDirection = 'column';
+      
+      // Card header
+      const header = document.createElement('div');
+      header.style.display = 'flex';
+      header.style.justifyContent = 'space-between';
+      header.style.alignItems = 'flex-start';
+      header.style.marginBottom = '12px';
+      
+      const title = document.createElement('h3');
+      title.textContent = item.name;
+      title.style.margin = '0';
+      title.style.color = 'var(--text-0, #ebdbb2)';
+      title.style.fontSize = '16px';
+      title.style.fontWeight = '600';
+      
+      const installBtn = document.createElement('button');
+      installBtn.textContent = 'Install';
+      installBtn.className = 'btn primary';
+      installBtn.style.backgroundColor = 'var(--accent-1, #66b1ff)';
+      installBtn.style.borderColor = 'var(--accent-1, #66b1ff)';
+      installBtn.style.color = 'var(--text-0, #282828)';
+      installBtn.style.padding = '6px 12px';
+      installBtn.style.fontSize = '12px';
+      installBtn.style.borderRadius = '4px';
+      installBtn.style.cursor = 'pointer';
+      installBtn.style.border = 'none';
+      installBtn.style.transition = 'all 0.2s';
+      
+      installBtn.addEventListener('click', () => {
+        this.installStoreItem(item, type);
+      });
+      
+      header.appendChild(title);
+      header.appendChild(installBtn);
+      
+      // Description
+      const description = document.createElement('p');
+      description.textContent = item.description;
+      description.style.margin = '0 0 12px 0';
+      description.style.color = 'var(--text-1, #ebdbb2)';
+      description.style.fontSize = '14px';
+      description.style.lineHeight = '1.4';
+      
+      // Meta information
+      const meta = document.createElement('div');
+      meta.style.display = 'flex';
+      meta.style.justifyContent = 'space-between';
+      meta.style.alignItems = 'center';
+      meta.style.fontSize = '12px';
+      meta.style.color = 'var(--text-2, #928374)';
+      
+      const creator = document.createElement('span');
+      creator.textContent = 'by ' + item.creator;
+      
+      const dates = document.createElement('span');
+      const updatedDate = new Date(item.dateUpdated).toLocaleDateString();
+      dates.textContent = 'Updated: ' + updatedDate;
+      
+      meta.appendChild(creator);
+      meta.appendChild(dates);
+      
+      contentSection.appendChild(header);
+      contentSection.appendChild(description);
+      contentSection.appendChild(meta);
+      
+      contentContainer.appendChild(thumbnailSection);
+      contentContainer.appendChild(contentSection);
+      
+      card.appendChild(contentContainer);
+      
+      // Add hover effect
+      card.addEventListener('mouseenter', () => {
+        card.style.borderColor = 'var(--accent-1, #66b1ff)';
+        card.style.transform = 'translateY(-2px)';
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        card.style.borderColor = 'var(--surface-2, #3c3836)';
+        card.style.transform = 'translateY(0)';
+      });
+      
+      return card;
+    },
+
+    installStoreItem(item, type) {
+      // For now, just show a notification
+      const itemType = type === 'plugin' ? 'Plugin' : 'Theme';
+      const message = itemType + ' "' + item.name + '" installation not yet implemented.';
+      
+      if (window.opener?.VRCXExtended?.Utils?.showNotification) {
+        window.opener.VRCXExtended.Utils.showNotification(message, 'info');
+      } else {
+        alert(message);
+      }
     },
 
     simpleRenderSettings(listElement) {
