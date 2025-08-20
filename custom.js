@@ -74,11 +74,35 @@
     }
 
     /**
-     * Simple module loader - only used to load the module system
+     * Simple module loader with fallback - only used to load the module system
      * @param {string} src - Source URL of the script
      * @returns {Promise} Promise that resolves when script is loaded
      */
     async function loadModuleSystem(src) {
+        // Check localStorage for debug mode setting first, then fall back to CONFIG
+        let isDebugMode = CONFIG.debugMode;
+        try {
+            const storedSettings = localStorage.getItem('vrcx_extended_settings');
+            if (storedSettings) {
+                const settings = JSON.parse(storedSettings);
+                isDebugMode = settings.debugMode || CONFIG.debugMode;
+            }
+        } catch (error) {
+            console.warn('Failed to read debug mode from localStorage:', error);
+        }
+        
+        let fallbackSrc = null;
+        
+        // If in debug mode and this is a GitHub URL, prepare local fallback
+        if (isDebugMode && src.includes('raw.githubusercontent.com')) {
+            fallbackSrc = CONFIG.localDebugPaths.modules + '/' + CONFIG.moduleSystemFile;
+        }
+        
+        // If in debug mode and this is a local file, prepare GitHub fallback
+        if (isDebugMode && src.startsWith('file://')) {
+            fallbackSrc = CONFIG.baseUrl + CONFIG.moduleSystemFile;
+        }
+        
         try {
             console.log(`📡 Loading module system: ${src}`);
             
@@ -115,6 +139,64 @@
             console.log('✓ Module system loaded');
             
         } catch (error) {
+            // If we have a fallback source, try it
+            if (fallbackSrc) {
+                console.warn(`⚠️ Failed to load module system from ${src}, trying fallback: ${fallbackSrc}`);
+                console.warn(`Error: ${error.message}`);
+                
+                try {
+                    console.log(`📡 Loading module system from fallback: ${fallbackSrc}`);
+                    
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000);
+                    
+                    const response = await fetch(fallbackSrc, {
+                        mode: 'cors',
+                        cache: 'no-cache',
+                        signal: controller.signal,
+                        headers: {
+                            'Accept': 'text/plain, text/javascript, application/javascript, */*'
+                        }
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const content = await response.text();
+                    
+                    if (!content.trim()) {
+                        throw new Error('Empty module system content from fallback');
+                    }
+
+                    // Execute the module system from fallback
+                    const script = document.createElement('script');
+                    script.type = 'text/javascript';
+                    script.textContent = content + `\n//# sourceURL=${fallbackSrc}`;
+                    document.head.appendChild(script);
+                    
+                    console.log('✓ Module system loaded from fallback');
+                    
+                    // Show notification about fallback if possible
+                    if (typeof Noty !== 'undefined') {
+                        const fallbackType = fallbackSrc.includes('raw.githubusercontent.com') ? 'GitHub' : 'local files';
+                        new Noty({
+                            type: 'warning',
+                            text: `Module system loaded from ${fallbackType} fallback`,
+                            timeout: 5000
+                        }).show();
+                    }
+                    
+                    return;
+                    
+                } catch (fallbackError) {
+                    console.error(`✗ Failed to load module system from fallback: ${fallbackSrc}`, fallbackError.message);
+                    throw new Error(`Failed to load module system from both ${src} and fallback ${fallbackSrc}: ${error.message}`);
+                }
+            }
+            
             console.error('❌ Failed to load module system:', error);
             throw error;
         }

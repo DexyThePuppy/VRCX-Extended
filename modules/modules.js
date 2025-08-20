@@ -217,9 +217,9 @@ window.VRCXExtended.ModuleSystem = {
         if (isDebugMode && src.startsWith('file://')) {
             const filename = src.split('/').pop();
             if (type === 'html') {
-                fallbackSrc = `${this.config.repository.paths.html}/${filename}`;
+                fallbackSrc = `${this.config.repository.baseUrl}/${this.config.repository.paths.html}/${filename}`;
             } else if (type === 'css') {
-                fallbackSrc = `${this.config.repository.paths.stylesheets}/${filename}`;
+                fallbackSrc = `${this.config.repository.baseUrl}/${this.config.repository.paths.stylesheets}/${filename}`;
             }
         }
         
@@ -357,7 +357,7 @@ window.VRCXExtended.ModuleSystem = {
         // If in debug mode and this is a local file, prepare GitHub fallback
         if (isDebugMode && src.startsWith('file://')) {
             const filename = src.split('/').pop();
-            fallbackSrc = `${this.config.repository.paths.modules}/${filename}`;
+            fallbackSrc = `${this.config.repository.baseUrl}/${this.config.repository.paths.modules}/${filename}`;
         }
         
         try {
