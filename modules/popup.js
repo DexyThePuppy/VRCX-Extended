@@ -191,23 +191,12 @@ window.VRCXExtended.Popup = {
 
     renderContent(section) {
       const list = document.getElementById('list');
-      const localTab = document.getElementById('localTab');
-      const onlineTab = document.getElementById('onlineTab');
-      
-      // Clear all containers
       list.innerHTML = '';
-      if (localTab) localTab.innerHTML = '';
-      if (onlineTab) onlineTab.innerHTML = '';
       
       switch(section) {
         case 'plugins':
         case 'themes':
-          const activeTab = this.getActiveTab();
-          if (activeTab === 'local') {
-            this.renderLocalList(section, localTab);
-          } else if (activeTab === 'online') {
-            this.renderOnlineList(section, onlineTab);
-          }
+          this.renderList(section);
           break;
         case 'settings':
           this.renderSettings();
@@ -219,11 +208,20 @@ window.VRCXExtended.Popup = {
 
     renderList(section) {
       const list = document.getElementById('list');
-      const storageKey = section === 'plugins' ? KEYS.PLUGINS : KEYS.THEMES;
-      const data = this.readJSON(storageKey, []);
+      const localTab = document.getElementById('localTab');
+      const onlineTab = document.getElementById('onlineTab');
       
-      // Use simplified UI rendering
-      this.simpleRenderList(data, section, list);
+      // Clear all containers
+      list.innerHTML = '';
+      if (localTab) localTab.innerHTML = '';
+      if (onlineTab) onlineTab.innerHTML = '';
+      
+      const activeTab = this.getActiveTab();
+      if (activeTab === 'local') {
+        this.renderLocalList(section, localTab);
+      } else if (activeTab === 'online') {
+        this.renderOnlineList(section, onlineTab);
+      }
     },
     
     renderLocalList(section, container) {
