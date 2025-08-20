@@ -417,9 +417,11 @@ window.VRCXExtended.ModuleSystem = {
             console.log('🚀 Initializing VRCX-Extended system...');
             
             // 0. Ensure Noty is available for global use
+            console.log('📋 Step 0: Ensuring Noty library is available...');
             try {
-                console.log('📋 Ensuring Noty library is available...');
+                console.log('📋 Checking if Noty is already available:', typeof Noty !== 'undefined');
                 await Utils.ensureNotyAvailable();
+                console.log('📋 After ensureNotyAvailable, Noty status:', typeof Noty !== 'undefined');
                 if (typeof Noty !== 'undefined') {
                     console.log('✓ Noty library ready for global use');
                 } else {
@@ -429,6 +431,7 @@ window.VRCXExtended.ModuleSystem = {
                 console.warn('⚠️ Could not load Noty library:', notyError.message);
                 console.warn('⚠️ Notifications will use fallback system');
             }
+            console.log('📋 Step 0 completed, moving to injection...');
             
             // 1. Initialize injection system (sets up API and applies existing content)
             try {
