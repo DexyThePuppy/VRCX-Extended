@@ -258,25 +258,9 @@ body.x-container {
   height: fit-content;
 }
 
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
-  opacity: 0;
-  transition: var(--transition);
-}
-
 .card:hover { 
   transform: translateY(-1px);
   box-shadow: 0 8px 16px hsl(0 calc(1*0%) 0% /0.24);
-}
-
-.card:hover::before {
-  opacity: 1;
 }
 
 /* Plugin/Theme Card Header */
