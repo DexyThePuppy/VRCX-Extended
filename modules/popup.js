@@ -139,10 +139,6 @@ window.VRCXExtended.Popup = {
       return document.querySelector('.sidebar .menu-item.active')?.dataset.section || 'plugins'; 
     },
     
-    getActiveTab() {
-      return document.querySelector('.tab-button.active')?.dataset.tab || 'local';
-    },
-    
     setSection(sec) {
       document.querySelectorAll('.sidebar .menu-item').forEach(mi => 
         mi.classList.toggle('active', mi.dataset.section === sec)
@@ -155,38 +151,11 @@ window.VRCXExtended.Popup = {
       };
       document.getElementById('sectionTitle').textContent = titles[sec] || 'Unknown';
       
-      // Show/hide create button and tabs based on section
+      // Show/hide create button based on section
       const createBtn = document.getElementById('createBtn');
-      const tabsContainer = document.getElementById('tabsContainer');
-      const list = document.getElementById('list');
-      
-      if (sec === 'plugins' || sec === 'themes') {
-        createBtn.style.display = 'inline-flex';
-        tabsContainer.style.display = 'block';
-        list.style.display = 'none';
-        this.setActiveTab('local'); // Reset to local tab when switching sections
-      } else {
-        createBtn.style.display = 'none';
-        tabsContainer.style.display = 'none';
-        list.style.display = 'grid';
-      }
+      createBtn.style.display = (sec === 'plugins' || sec === 'themes') ? 'inline-flex' : 'none';
       
       this.renderContent(sec);
-    },
-    
-    setActiveTab(tab) {
-      // Update tab buttons
-      document.querySelectorAll('.tab-button').forEach(btn => 
-        btn.classList.toggle('active', btn.dataset.tab === tab)
-      );
-      
-      // Update tab content
-      document.querySelectorAll('.tab-content').forEach(content => 
-        content.classList.toggle('active', content.id === tab + 'Tab')
-      );
-      
-      // Re-render content for current section
-      this.renderContent(this.getSection());
     },
 
     renderContent(section) {
@@ -208,86 +177,11 @@ window.VRCXExtended.Popup = {
 
     renderList(section) {
       const list = document.getElementById('list');
-      const localTab = document.getElementById('localTab');
-      const onlineTab = document.getElementById('onlineTab');
-      
-      // Clear all containers
-      list.innerHTML = '';
-      if (localTab) localTab.innerHTML = '';
-      if (onlineTab) onlineTab.innerHTML = '';
-      
-      const activeTab = this.getActiveTab();
-      if (activeTab === 'local') {
-        this.renderLocalList(section, localTab);
-      } else if (activeTab === 'online') {
-        this.renderOnlineList(section, onlineTab);
-      }
-    },
-    
-    renderLocalList(section, container) {
       const storageKey = section === 'plugins' ? KEYS.PLUGINS : KEYS.THEMES;
       const data = this.readJSON(storageKey, []);
       
       // Use simplified UI rendering
-      this.simpleRenderList(data, section, container);
-    },
-    
-    renderOnlineList(section, container) {
-      const isPlugin = section === 'plugins';
-      const storageKey = isPlugin ? KEYS.ONLINE_PLUGINS : KEYS.ONLINE_THEMES;
-      const data = this.readJSON(storageKey, []);
-      
-      // Warning message
-      const warning = document.createElement('div');
-      warning.className = 'online-warning';
-      warning.innerHTML = '<strong>⚠️ Advanced Section</strong><br>' +
-        'This section is for advanced users. If you are having difficulties using it, use the Local tab instead.';
-      container.appendChild(warning);
-      
-      // Instructions section
-      const instructions = document.createElement('div');
-      instructions.className = 'online-section';
-      const instructionTitle = document.createElement('h3');
-      instructionTitle.textContent = 'Paste Links To ' + (isPlugin ? 'JS' : 'CSS') + ' Files Here';
-      instructions.appendChild(instructionTitle);
-      
-      const instructionText = document.createElement('p');
-      instructionText.innerHTML = '• One link per line<br>' +
-        '• You can prefix lines with @light or @dark to toggle them based on your Discord theme<br>' +
-        '• Make sure to use direct links to files (raw or github.io)!';
-      instructions.appendChild(instructionText);
-      container.appendChild(instructions);
-      
-      // Textarea section
-      const textareaSection = document.createElement('div');
-      textareaSection.className = 'online-section';
-      const textareaTitle = document.createElement('h3');
-      textareaTitle.textContent = 'Online ' + (isPlugin ? 'Plugins' : 'Themes');
-      textareaSection.appendChild(textareaTitle);
-      
-      const textarea = document.createElement('textarea');
-      textarea.className = 'online-textarea';
-      textarea.placeholder = 'https://example.com/plugin.js\n' +
-        'https://github.com/user/repo/raw/main/theme.css\n' +
-        '@dark https://example.com/dark-theme.css\n' +
-        '@light https://example.com/light-theme.css';
-      textarea.value = data.join('\n');
-      
-      textarea.addEventListener('input', () => {
-        const lines = textarea.value.split('\n').filter(line => line.trim());
-        this.writeJSON(storageKey, lines);
-        
-        // Refresh the main app
-        if (isPlugin && window.opener?.$app?.refreshVrcxPlugins) {
-          window.opener.$app.refreshVrcxPlugins();
-        }
-        if (!isPlugin && window.opener?.$app?.refreshVrcxThemes) {
-          window.opener.$app.refreshVrcxThemes();
-        }
-      });
-      
-      textareaSection.appendChild(textarea);
-      container.appendChild(textareaSection);
+      this.simpleRenderList(data, section, list);
     },
 
     renderSettings() {
@@ -768,9 +662,6 @@ window.VRCXExtended.Popup = {
   // Setup event listeners
   document.querySelectorAll('.sidebar .menu-item').forEach(mi => 
     mi.addEventListener('click', () => window.VRCXExtended.PopupManager.setSection(mi.dataset.section))
-  );
-  document.querySelectorAll('.tab-button').forEach(btn => 
-    btn.addEventListener('click', () => window.VRCXExtended.PopupManager.setActiveTab(btn.dataset.tab))
   );
   document.getElementById('createBtn').addEventListener('click', () => 
     window.VRCXExtended.PopupManager.openSimpleEditor(null)
