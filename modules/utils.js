@@ -169,7 +169,32 @@ window.VRCXExtended.Utils = {
       : `Failed to ${action.slice(0, -1)} ${itemType.toLowerCase()} <strong>${this.escapeHtml(itemName)}</strong>`;
     
     const type = isSuccess ? 'success' : 'error';
-    this.showNotification(message, type, 4000);
+    const timeout = type === 'error' ? 6000 : 4000;
+
+    // Try VRCX native Noty first
+    if (typeof Noty !== 'undefined') {
+      new Noty({
+        type: type,
+        text: message,
+        timeout: timeout
+      }).show();
+      return;
+    }
+    
+    // Try to load Noty, then fallback if it fails
+    this.ensureNotyAvailable().then(() => {
+      if (typeof Noty !== 'undefined') {
+        new Noty({
+          type: type,
+          text: message,
+          timeout: timeout
+        }).show();
+      } else {
+        this.showFallbackNotification(message, type, timeout);
+      }
+    }).catch(() => {
+      this.showFallbackNotification(message, type, timeout);
+    });
   },
 
   /**
