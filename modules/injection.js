@@ -88,9 +88,19 @@ window.VRCXExtended.Injection = {
     const injectedThemes = this.injectThemes(themes);
     
     // Show theme injection notification
-    if (injectedThemes.length > 0 && utils && utils.showNotification) {
+    if (injectedThemes.length > 0) {
       const message = 'Themes refreshed: <strong>' + injectedThemes.join(', ') + '</strong>';
-      utils.showNotification(message, 'success', 4000);
+      
+      // Try Utils first, then fallback to direct Noty
+      if (utils && utils.showNotification) {
+        utils.showNotification(message, 'success', 4000);
+      } else if (typeof Noty !== 'undefined') {
+        new Noty({
+          type: 'success',
+          text: message,
+          timeout: 4000
+        }).show();
+      }
     }
   },
 
@@ -105,9 +115,19 @@ window.VRCXExtended.Injection = {
     const injectedPlugins = this.injectPlugins(plugins);
     
     // Show plugin injection notification
-    if (injectedPlugins.length > 0 && utils && utils.showNotification) {
+    if (injectedPlugins.length > 0) {
       const message = 'Plugins refreshed: <strong>' + injectedPlugins.join(', ') + '</strong>';
-      utils.showNotification(message, 'success', 4000);
+      
+      // Try Utils first, then fallback to direct Noty
+      if (utils && utils.showNotification) {
+        utils.showNotification(message, 'success', 4000);
+      } else if (typeof Noty !== 'undefined') {
+        new Noty({
+          type: 'success',
+          text: message,
+          timeout: 4000
+        }).show();
+      }
     }
   },
 
@@ -117,8 +137,6 @@ window.VRCXExtended.Injection = {
    * @param {Array} injectedPlugins - Array of injected plugin names
    */
   showInjectionNotifications(injectedThemes, injectedPlugins) {
-    const utils = window.VRCXExtended.Utils;
-    
     // Only show notifications if there's content to report
     if (injectedThemes.length === 0 && injectedPlugins.length === 0) {
       return;
@@ -134,10 +152,20 @@ window.VRCXExtended.Injection = {
       message += 'Plugins loaded: <strong>' + injectedPlugins.join(', ') + '</strong>';
     }
     
-    // Show notification
-    if (utils && utils.showNotification) {
-      utils.showNotification(message, 'success', 5000);
-    }
+    // Delay notification to ensure system is ready
+    setTimeout(() => {
+      const utils = window.VRCXExtended?.Utils;
+      if (utils && utils.showNotification) {
+        utils.showNotification(message, 'success', 5000);
+      } else if (typeof Noty !== 'undefined') {
+        // Fallback to direct Noty if Utils not available
+        new Noty({
+          type: 'success',
+          text: message,
+          timeout: 5000
+        }).show();
+      }
+    }, 1000); // 1 second delay to ensure system is ready
   },
 
   /**
