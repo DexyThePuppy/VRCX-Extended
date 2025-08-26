@@ -23,9 +23,9 @@
         url: window.location.href
     };
 
-    console.log('🚀 VRCX-Extended Minimal Loader v' + SYSTEM_INFO.version);
-    console.log('📅 Loaded at:', SYSTEM_INFO.loadedAt);
-    console.log('🌐 URL:', SYSTEM_INFO.url);
+    console.log('[VRCX-Extended] 🚀 VRCX-Extended Minimal Loader v' + SYSTEM_INFO.version);
+    console.log('[VRCX-Extended] 📅 Loaded at:', SYSTEM_INFO.loadedAt);
+    console.log('[VRCX-Extended] 🌐 URL:', SYSTEM_INFO.url);
 
     // Configuration
     const CONFIG = {
@@ -50,25 +50,25 @@
         let isDebugMode = CONFIG.debugMode;
         try {
             const storedSettings = localStorage.getItem('vrcx_extended_settings');
-            console.log('🔧 getModuleSystemUrl - Raw localStorage settings:', storedSettings);
+            console.log('[VRCX-Extended] 🔧 getModuleSystemUrl - Raw localStorage settings:', storedSettings);
             if (storedSettings) {
                 const settings = JSON.parse(storedSettings);
-                console.log('🔧 getModuleSystemUrl - Parsed localStorage settings:', settings);
+                console.log('[VRCX-Extended] 🔧 getModuleSystemUrl - Parsed localStorage settings:', settings);
                 isDebugMode = settings.debugMode || CONFIG.debugMode;
             }
         } catch (error) {
-            console.warn('Failed to read debug mode from localStorage:', error);
+            console.warn('[VRCX-Extended] Failed to read debug mode from localStorage:', error);
         }
         
-        console.log('🔧 getModuleSystemUrl - Final debug mode value:', isDebugMode);
+        console.log('[VRCX-Extended] 🔧 getModuleSystemUrl - Final debug mode value:', isDebugMode);
         
         if (isDebugMode) {
             const localPath = CONFIG.localDebugPaths.modules + '/' + CONFIG.moduleSystemFile;
-            console.log(`🔧 Debug mode: Loading module system from local path: ${localPath}`);
+            console.log(`[VRCX-Extended] 🔧 Debug mode: Loading module system from local path: ${localPath}`);
             return localPath;
         } else {
             const githubUrl = CONFIG.baseUrl + CONFIG.moduleSystemFile;
-            console.log(`🌐 Production mode: Loading module system from GitHub: ${githubUrl}`);
+            console.log(`[VRCX-Extended] 🌐 Production mode: Loading module system from GitHub: ${githubUrl}`);
             return githubUrl;
         }
     }
@@ -88,7 +88,7 @@
                 isDebugMode = settings.debugMode || CONFIG.debugMode;
             }
         } catch (error) {
-            console.warn('Failed to read debug mode from localStorage:', error);
+            console.warn('[VRCX-Extended] Failed to read debug mode from localStorage:', error);
         }
         
         let fallbackSrc = null;
@@ -104,7 +104,7 @@
         }
         
         try {
-            console.log(`📡 Loading module system: ${src}`);
+            console.log(`[VRCX-Extended] 📡 Loading module system: ${src}`);
             
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -136,16 +136,16 @@
             script.textContent = content + `\n//# sourceURL=${src}`;
             document.head.appendChild(script);
             
-            console.log('✓ Module system loaded');
+            console.log('[VRCX-Extended] ✓ Module system loaded');
             
         } catch (error) {
             // If we have a fallback source, try it
             if (fallbackSrc) {
-                console.warn(`⚠️ Failed to load module system from ${src}, trying fallback: ${fallbackSrc}`);
-                console.warn(`Error: ${error.message}`);
+                console.warn(`[VRCX-Extended] ⚠️ Failed to load module system from ${src}, trying fallback: ${fallbackSrc}`);
+                console.warn(`[VRCX-Extended] Error: ${error.message}`);
                 
                 try {
-                    console.log(`📡 Loading module system from fallback: ${fallbackSrc}`);
+                    console.log(`[VRCX-Extended] 📡 Loading module system from fallback: ${fallbackSrc}`);
                     
                     const controller = new AbortController();
                     const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -177,7 +177,7 @@
                     script.textContent = content + `\n//# sourceURL=${fallbackSrc}`;
                     document.head.appendChild(script);
                     
-                    console.log('✓ Module system loaded from fallback');
+                    console.log('[VRCX-Extended] ✓ Module system loaded from fallback');
                     
                     // Show notification about fallback if possible
                     if (typeof Noty !== 'undefined') {
@@ -192,12 +192,12 @@
                     return;
                     
                 } catch (fallbackError) {
-                    console.error(`✗ Failed to load module system from fallback: ${fallbackSrc}`, fallbackError.message);
+                    console.error(`[VRCX-Extended] ✗ Failed to load module system from fallback: ${fallbackSrc}`, fallbackError.message);
                     throw new Error(`Failed to load module system from both ${src} and fallback ${fallbackSrc}: ${error.message}`);
                 }
             }
             
-            console.error('❌ Failed to load module system:', error);
+            console.error('[VRCX-Extended] ❌ Failed to load module system:', error);
             throw error;
         }
     }
@@ -210,17 +210,17 @@
         let isDebugMode = CONFIG.debugMode;
         try {
             const storedSettings = localStorage.getItem('vrcx_extended_settings');
-            console.log('🔧 Raw localStorage settings:', storedSettings);
+            console.log('[VRCX-Extended] 🔧 Raw localStorage settings:', storedSettings);
             if (storedSettings) {
                 const settings = JSON.parse(storedSettings);
-                console.log('🔧 Parsed localStorage settings:', settings);
+                console.log('[VRCX-Extended] 🔧 Parsed localStorage settings:', settings);
                 isDebugMode = settings.debugMode || CONFIG.debugMode;
             }
         } catch (error) {
-            console.warn('Failed to read debug mode from localStorage:', error);
+            console.warn('[VRCX-Extended] Failed to read debug mode from localStorage:', error);
         }
         
-        console.log('🔧 Final debug mode value:', isDebugMode);
+        console.log('[VRCX-Extended] 🔧 Final debug mode value:', isDebugMode);
         
         // Always initialize the Config object so it's available to the module system
         if (!window.VRCXExtended) {
@@ -228,7 +228,7 @@
         }
         
         if (!window.VRCXExtended.Config) {
-            console.log('🔧 Creating temporary Config object with debug mode:', isDebugMode);
+            console.log('[VRCX-Extended] 🔧 Creating temporary Config object with debug mode:', isDebugMode);
             window.VRCXExtended.Config = {
                 getSetting: (key) => {
                     if (key === 'debugMode') return isDebugMode;
@@ -241,12 +241,12 @@
                 })
             };
         } else {
-            console.log('🔧 Config object already exists, debug mode:', isDebugMode);
+            console.log('[VRCX-Extended] 🔧 Config object already exists, debug mode:', isDebugMode);
         }
         
         if (isDebugMode) {
-            console.log('🔧 Debug mode enabled - initializing local file paths...');
-            console.log('🔧 Debug settings initialized:', {
+            console.log('[VRCX-Extended] 🔧 Debug mode enabled - initializing local file paths...');
+            console.log('[VRCX-Extended] 🔧 Debug settings initialized:', {
                 debugMode: isDebugMode,
                 localPaths: CONFIG.localDebugPaths
             });
@@ -265,7 +265,7 @@
                 });
             }
 
-            console.log('📦 Starting VRCX-Extended...');
+            console.log('[VRCX-Extended] 📦 Starting VRCX-Extended...');
             
             // Initialize debug settings if enabled
             initializeDebugSettings();
@@ -282,7 +282,7 @@
                 } catch (loadError) {
                     retryCount++;
                     if (retryCount <= maxRetries) {
-                        console.warn(`⚠️ Module system load attempt ${retryCount} failed, retrying...`);
+                        console.warn(`[VRCX-Extended] ⚠️ Module system load attempt ${retryCount} failed, retrying...`);
                         await new Promise(resolve => setTimeout(resolve, retryCount * 1000));
                     } else {
                         throw new Error(`Module system failed after ${maxRetries} retries: ${loadError.message}`);
@@ -295,7 +295,7 @@
                 throw new Error('Module system not available after loading');
             }
 
-            console.log('✓ Module system ready');
+            console.log('[VRCX-Extended] ✓ Module system ready');
             
             // Small delay for initialization
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -314,7 +314,7 @@
             const initSuccess = await moduleSystem.initializeSystem();
             
             if (!initSuccess) {
-                console.warn('⚠️ System initialization had issues, but may still function');
+                console.warn('[VRCX-Extended] ⚠️ System initialization had issues, but may still function');
                 if (typeof Noty !== 'undefined') {
                     new Noty({
                         type: 'warning',
@@ -325,20 +325,20 @@
             } else {
                 // Verify Noty is available for global use
                 if (typeof Noty !== 'undefined') {
-                    console.log('🎯 Noty is now globally available - you can use: new Noty({type: "success", text: "Hello!"}).show()');
+                    console.log('[VRCX-Extended] 🎯 Noty is now globally available - you can use: new Noty({type: "success", text: "Hello!"}).show()');
                 } else {
-                    console.log('⚠️ Noty not globally available - use VRCXExtended.Utils methods instead');
+                    console.log('[VRCX-Extended] ⚠️ Noty not globally available - use VRCXExtended.Utils methods instead');
                 }
             }
             
         } catch (error) {
-            console.error('❌ VRCX-Extended startup failed:', error);
+            console.error('[VRCX-Extended] ❌ VRCX-Extended startup failed:', error);
             
             // Show error notification
             if (typeof Noty !== 'undefined') {
                 new Noty({
                     type: 'error',
-                    text: `❌ VRCX-Extended failed to load: ${error.message}`,
+                    text: `[VRCX-Extended] ❌ VRCX-Extended failed to load: ${error.message}`,
                     timeout: 8000,
                     closeWith: ['click', 'button'],
                     buttons: [
@@ -362,7 +362,7 @@ If the problem persists, please report this issue with the error details from th
                 }).show();
             } else {
                 // Fallback alert
-                alert(`VRCX-Extended failed to load: ${error.message}\n\nCheck the console for details.`);
+                alert(`[VRCX-Extended] VRCX-Extended failed to load: ${error.message}\n\nCheck the console for details.`);
             }
         }
     }

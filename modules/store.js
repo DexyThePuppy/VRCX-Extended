@@ -13,30 +13,32 @@ window.VRCXExtended.Store = {
   /**
    * Fetch store data for a specific type (plugins or themes)
    * @param {string} type - 'plugins' or 'themes'
+   * @param {boolean} forceRefresh - Force refresh even if cache is valid
    * @returns {Promise<Array>} Promise that resolves to store data array
    */
-  async fetchStoreData(type) {
+  async fetchStoreData(type, forceRefresh = false) {
     const config = window.VRCXExtended.Config;
+    const utils = window.VRCXExtended.Utils;
     
     // Debug logging for store URL selection
     const settings = config.getSettings();
-    console.log(`🔧 [Store] Debug mode: ${settings.debugMode}`);
-    console.log(`🔧 [Store] Disable cache: ${settings.disableCache}`);
-    console.log(`🔧 [Store] Local debug paths:`, settings.localDebugPaths);
+    utils.safeConsoleLog('log', `🔧 [Store] Debug mode: ${settings.debugMode}`);
+    utils.safeConsoleLog('log', `🔧 [Store] Disable cache: ${settings.disableCache}`);
+    utils.safeConsoleLog('log', `🔧 [Store] Local debug paths:`, settings.localDebugPaths);
     
     try {
-      // Check cache first
-      if (config.isStoreCacheValid(type)) {
+      // Check cache first (unless force refresh is requested)
+      if (!forceRefresh && config.isStoreCacheValid(type)) {
         const cachedData = config.getStoreCache(type);
         if (cachedData) {
-          console.log(`📦 [Store] Using cached ${type} data`);
+          utils.safeConsoleLog('log', `📦 [Store] Using cached ${type} data`);
           return cachedData;
         }
       }
 
       // Get appropriate URL based on debug mode
       const url = config.getStoreUrl(type);
-      console.log(`📦 [Store] Fetching ${type} from:`, url);
+      utils.safeConsoleLog('log', `📦 [Store] Fetching ${type} from:`, url);
 
       // Fetch data from URL
       const response = await fetch(url);
@@ -56,22 +58,24 @@ window.VRCXExtended.Store = {
       const validatedData = data.filter(item => this.validateStoreItem(item, type));
       
       if (validatedData.length !== data.length) {
-        console.warn(`⚠️ [Store] Filtered out ${data.length - validatedData.length} invalid ${type} items`);
+        utils.safeConsoleLog('warn', `⚠️ [Store] Filtered out ${data.length - validatedData.length} invalid ${type} items`);
       }
+      
+
 
       // Cache the validated data
       config.setStoreCache(type, validatedData);
       
-      console.log(`✅ [Store] Successfully loaded ${validatedData.length} ${type}`);
+      utils.safeConsoleLog('log', `✅ [Store] Successfully loaded ${validatedData.length} ${type}`);
       return validatedData;
 
     } catch (error) {
-      console.error(`❌ [Store] Failed to fetch ${type}:`, error);
+      utils.safeConsoleLog('error', `❌ [Store] Failed to fetch ${type}:`, error);
       
       // Try to return cached data even if expired
       const cachedData = config.getStoreCache(type);
       if (cachedData) {
-        console.log(`📦 [Store] Using expired cached ${type} data as fallback`);
+        utils.safeConsoleLog('log', `📦 [Store] Using expired cached ${type} data as fallback`);
         return cachedData;
       }
       
@@ -91,27 +95,25 @@ window.VRCXExtended.Store = {
     // Check all required fields exist
     for (const field of requiredFields) {
       if (!item.hasOwnProperty(field)) {
-        console.warn(`⚠️ [Store] Item missing required field '${field}':`, item);
+        const utils = window.VRCXExtended.Utils;
+        utils.safeConsoleLog('warn', `⚠️ [Store] Item missing required field '${field}':`, item);
         return false;
       }
     }
 
-    // Validate filename extension
-    const expectedExtension = type === 'plugins' ? '.js' : '.css';
-    if (!item.filename.endsWith(expectedExtension)) {
-      console.warn(`⚠️ [Store] Item has wrong file extension for ${type}:`, item.filename);
-      return false;
-    }
+
 
     // Validate dates
     if (!this.isValidDate(item.dateCreated) || !this.isValidDate(item.dateUpdated)) {
-      console.warn(`⚠️ [Store] Item has invalid dates:`, item);
+      const utils = window.VRCXExtended.Utils;
+      utils.safeConsoleLog('warn', `⚠️ [Store] Item has invalid dates:`, item);
       return false;
     }
 
     // Validate thumbnail URL
     if (!this.isValidUrl(item.thumbnail)) {
-      console.warn(`⚠️ [Store] Item has invalid thumbnail URL:`, item.thumbnail);
+      const utils = window.VRCXExtended.Utils;
+      utils.safeConsoleLog('warn', `⚠️ [Store] Item has invalid thumbnail URL:`, item.thumbnail);
       return false;
     }
 
@@ -202,14 +204,15 @@ window.VRCXExtended.Store = {
    */
   clearCache(type = 'all') {
     const config = window.VRCXExtended.Config;
+    const utils = window.VRCXExtended.Utils;
     
     if (type === 'all') {
       localStorage.removeItem(config.getStoreCacheKey('plugins'));
       localStorage.removeItem(config.getStoreCacheKey('themes'));
-      console.log('🗑️ [Store] Cleared all store cache');
+      utils.safeConsoleLog('log', '🗑️ [Store] Cleared all store cache');
     } else {
       localStorage.removeItem(config.getStoreCacheKey(type));
-      console.log(`🗑️ [Store] Cleared ${type} cache`);
+      utils.safeConsoleLog('log', `🗑️ [Store] Cleared ${type} cache`);
     }
   },
 

@@ -36,10 +36,10 @@ window.VRCXExtended.Utils = {
     try {
       const value = localStorage.getItem(key);
       const result = value ? JSON.parse(value) : fallback;
-      console.log('📖 Storage read for key:', key, 'count:', Array.isArray(result) ? result.length : 'non-array');
+      this.safeConsoleLog('log', '📖 Storage read for key:', key, 'count:', Array.isArray(result) ? result.length : 'non-array');
       return result;
     } catch (error) {
-      console.error('❌ Storage read failed for key:', key, error);
+      this.safeConsoleLog('error', '❌ Storage read failed for key:', key, error);
       return fallback;
     }
   },
@@ -52,9 +52,9 @@ window.VRCXExtended.Utils = {
   writeJSON(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
-      console.log('✅ Storage write successful for key:', key, 'value count:', Array.isArray(value) ? value.length : 'non-array');
+      this.safeConsoleLog('log', '✅ Storage write successful for key:', key, 'value count:', Array.isArray(value) ? value.length : 'non-array');
     } catch (error) {
-      console.error('❌ Storage write failed for key:', key, error);
+      this.safeConsoleLog('error', '❌ Storage write failed for key:', key, error);
       throw error;
     }
   },
@@ -225,7 +225,7 @@ window.VRCXExtended.Utils = {
     const bgColor = type === 'error' ? 'var(--red-2, #f56c6c)' : 
                    type === 'success' ? 'var(--green-2, #67c23a)' : 
                    type === 'warning' ? 'var(--yellow-2, #e6a23c)' :
-                   'var(--accent-1, #66b1ff)';
+                   'var(--accent-1, #ff6b35)';
     
     notification.style.cssText = `
       position: fixed;
@@ -321,17 +321,23 @@ window.VRCXExtended.Utils = {
    * @param {...*} args - Arguments to log
    */
   safeConsoleLog(level, ...args) {
-    const originalMethod = console[level] || console.log;
-    originalMethod.apply(console, args);
+    // Create a prefix to identify the source
+    const prefix = window.opener ? '[VRCX-Extended Popup]' : '[VRCX-Extended]';
     
-    // Try to forward to opener window if available
-    if (window.opener && window.opener.console) {
+    // If we're in a popup window, forward to the main window
+    if (window.opener && window.opener.console && window.opener !== window) {
       try {
         const openerMethod = window.opener.console[level] || window.opener.console.log;
-        openerMethod.call(window.opener.console, '[VRCX-Extended]', ...args);
+        openerMethod.call(window.opener.console, prefix, ...args);
       } catch (e) {
-        // Ignore cross-origin errors
+        // If forwarding fails, log locally
+        const originalMethod = console[level] || console.log;
+        originalMethod.apply(console, args);
       }
+    } else {
+      // We're in the main window, just log normally
+      const originalMethod = console[level] || console.log;
+      originalMethod.apply(console, args);
     }
   },
 
@@ -405,10 +411,10 @@ window.VRCXExtended.Utils = {
               theme: 'mint',
               timeout: 6000
             });
-            console.log('✅ Noty loaded and configured with VRCX defaults');
+            this.safeConsoleLog('log', '✅ Noty loaded and configured with VRCX defaults');
             resolve();
           } catch (error) {
-            console.warn('Noty loaded but failed to set defaults:', error);
+            this.safeConsoleLog('warn', 'Noty loaded but failed to set defaults:', error);
             resolve(); // Still resolve since Noty is available
           }
         } else {
@@ -417,7 +423,7 @@ window.VRCXExtended.Utils = {
       };
       
       script.onerror = () => {
-        console.warn('Failed to load Noty from CDN - using fallback notifications');
+        this.safeConsoleLog('warn', 'Failed to load Noty from CDN - using fallback notifications');
         reject(new Error('Failed to load Noty from CDN'));
       };
       

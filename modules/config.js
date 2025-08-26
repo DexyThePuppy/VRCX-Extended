@@ -110,7 +110,12 @@ window.VRCXExtended.Config = {
       const settings = stored ? JSON.parse(stored) : {};
       return { ...this.DEFAULT_SETTINGS, ...settings };
     } catch (error) {
-      console.warn('Failed to load settings, using defaults:', error);
+      const utils = window.VRCXExtended?.Utils;
+      if (utils?.safeConsoleLog) {
+        utils.safeConsoleLog('warn', 'Failed to load settings, using defaults:', error);
+      } else {
+        console.warn('Failed to load settings, using defaults:', error);
+      }
       return { ...this.DEFAULT_SETTINGS };
     }
   },
@@ -124,9 +129,19 @@ window.VRCXExtended.Config = {
       const currentSettings = this.getSettings();
       const updatedSettings = { ...currentSettings, ...newSettings };
       localStorage.setItem(this.KEYS.SETTINGS, JSON.stringify(updatedSettings));
-      console.log('✅ Settings updated:', updatedSettings);
+      const utils = window.VRCXExtended?.Utils;
+      if (utils?.safeConsoleLog) {
+        utils.safeConsoleLog('log', '✅ Settings updated:', updatedSettings);
+      } else {
+        console.log('✅ Settings updated:', updatedSettings);
+      }
     } catch (error) {
-      console.error('Failed to update settings:', error);
+      const utils = window.VRCXExtended?.Utils;
+      if (utils?.safeConsoleLog) {
+        utils.safeConsoleLog('error', 'Failed to update settings:', error);
+      } else {
+        console.error('Failed to update settings:', error);
+      }
     }
   },
 
@@ -164,6 +179,8 @@ window.VRCXExtended.Config = {
       return type === 'plugins' ? this.STORE.GITHUB.PLUGINS : this.STORE.GITHUB.THEMES;
     }
   },
+
+
 
   /**
    * Get store cache key for a specific type
@@ -215,7 +232,12 @@ window.VRCXExtended.Config = {
     try {
       localStorage.setItem(cacheKey, JSON.stringify(cacheData));
     } catch (error) {
-      console.warn('Failed to cache store data:', error);
+      const utils = window.VRCXExtended?.Utils;
+      if (utils?.safeConsoleLog) {
+        utils.safeConsoleLog('warn', 'Failed to cache store data:', error);
+      } else {
+        console.warn('Failed to cache store data:', error);
+      }
     }
   },
 

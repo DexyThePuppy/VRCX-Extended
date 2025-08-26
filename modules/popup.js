@@ -34,14 +34,16 @@ window.VRCXExtended.Popup = {
 
     try {
       // Force reload external resources to get latest HTML
-      console.log('📋 Loading external resources for popup...');
+      const utils = window.VRCXExtended.Utils;
+      utils.safeConsoleLog('log', '📋 Loading external resources for popup...');
       this.externalResources = await window.VRCXExtended.ModuleSystem.loadExternalResources();
 
       const html = this.processHTML(this.externalResources.html, this.externalResources.css);
       win.document.write(html);
       win.document.close();
     } catch (error) {
-      console.error('❌ Failed to build popup window:', error);
+      const utils = window.VRCXExtended.Utils;
+      utils.safeConsoleLog('error', '❌ Failed to build popup window:', error);
       // Fallback to basic HTML
       const fallbackHTML = this.generateFallbackHTML();
       win.document.write(fallbackHTML);
@@ -122,17 +124,44 @@ window.VRCXExtended.Popup = {
    * @returns {string} JavaScript content
    */
   generateJavaScript() {
-    const config = window.VRCXExtended.Config;
+    const config = window.VRCXExtended?.Config || {};
     
     return `
 (function(){
   'use strict';
 
   // Storage interop (uses opener's localStorage)
-  const KEYS = ${JSON.stringify(config.KEYS)};
+  const KEYS = {
+    PLUGINS: 'vrcx_mm_plugins',
+    THEMES: 'vrcx_mm_themes',
+    SETTINGS: 'vrcx_extended_settings'
+  };
 
   // Create the popup manager
   window.VRCXExtended = window.VRCXExtended || {};
+  
+  // Add safeConsoleLog function for popup window
+  window.VRCXExtended.Utils = window.VRCXExtended.Utils || {};
+  window.VRCXExtended.Utils.safeConsoleLog = function(level, ...args) {
+    // Create a prefix to identify the source
+    const prefix = '[VRCX-Extended Popup]';
+    
+    // Try to forward to main window
+    if (window.opener && window.opener.console && window.opener !== window) {
+      try {
+        const openerMethod = window.opener.console[level] || window.opener.console.log;
+        openerMethod.call(window.opener.console, prefix, ...args);
+      } catch (e) {
+        // If forwarding fails, log locally
+        const originalMethod = console[level] || console.log;
+        originalMethod.apply(console, args);
+      }
+    } else {
+      // Log locally if no opener
+      const originalMethod = console[level] || console.log;
+      originalMethod.apply(console, args);
+    }
+  };
   
   window.VRCXExtended.PopupManager = {
     getSection() { 
@@ -224,42 +253,78 @@ window.VRCXExtended.Popup = {
     createSimpleCard(item, section) {
       const card = document.createElement('div');
       card.className = 'card';
-
-      const title = document.createElement('div');
-      title.className = 'card-title';
-
-      const name = document.createElement('div');
-      name.className = 'name';
-      name.title = item.name;
-      name.textContent = item.name || '(untitled)';
-
+      card.style.border = '1px solid var(--surface-2, #3c3836)';
+      card.style.borderRadius = '8px';
+      card.style.padding = '16px';
+      card.style.marginBottom = '12px';
+      card.style.background = 'var(--surface-0, #282828)';
+      card.style.transition = 'all 0.2s';
+      
+      // Card content container
+      const contentContainer = document.createElement('div');
+      contentContainer.style.display = 'flex';
+      contentContainer.style.flexDirection = 'column';
+      contentContainer.style.gap = '12px';
+      
+      // 1. Title - Actions (Header)
+      const header = document.createElement('div');
+      header.style.display = 'flex';
+      header.style.justifyContent = 'space-between';
+      header.style.alignItems = 'center';
+      header.style.marginBottom = '8px';
+      
+      const title = document.createElement('h3');
+      title.textContent = item.name || '(untitled)';
+      title.style.margin = '0';
+      title.style.color = 'var(--text-0, #ebdbb2)';
+      title.style.fontSize = '16px';
+      title.style.fontWeight = '600';
+      
       const actions = document.createElement('div');
-      actions.className = 'card-actions';
-
-      const deleteIcon = document.createElement('i');
-      deleteIcon.className = 'el-icon-delete card-delete';
+      actions.style.display = 'flex';
+      actions.style.alignItems = 'center';
+      actions.style.gap = '8px';
+      
+      const deleteIcon = document.createElement('button');
+      deleteIcon.className = 'btn';
+      deleteIcon.innerHTML = '<i class="el-icon-delete"></i>';
       deleteIcon.title = 'Delete';
+      deleteIcon.style.padding = '4px 8px';
+      deleteIcon.style.backgroundColor = '#3a3a3a';
+      deleteIcon.style.borderColor = '#4a4a4a';
+      deleteIcon.style.color = '#ffffff';
+      
+      deleteIcon.addEventListener('mouseenter', () => {
+        deleteIcon.style.backgroundColor = '#ff453a';
+        deleteIcon.style.borderColor = '#ff453a';
+      });
+      
+      deleteIcon.addEventListener('mouseleave', () => {
+        deleteIcon.style.backgroundColor = '#3a3a3a';
+        deleteIcon.style.borderColor = '#4a4a4a';
+      });
+      
       deleteIcon.addEventListener('click', (e) => {
         e.stopPropagation();
-        console.log('🗑️ [Popup] Deleting item:', item.name, 'from section:', section);
+        window.VRCXExtended.Utils.safeConsoleLog('log', '🗑️ [Popup] Deleting item:', item.name, 'from section:', section);
         const storageKey = section === 'plugins' ? KEYS.PLUGINS : KEYS.THEMES;
         const allItems = this.readJSON(storageKey, []);
-        console.log('🗑️ [Popup] Current items before deletion:', allItems.length);
+        window.VRCXExtended.Utils.safeConsoleLog('log', '🗑️ [Popup] Current items before deletion:', allItems.length);
         const index = allItems.findIndex(x => x.id === item.id);
-        console.log('🗑️ [Popup] Found item at index:', index);
+        window.VRCXExtended.Utils.safeConsoleLog('log', '🗑️ [Popup] Found item at index:', index);
         
         if (index !== -1) {
           allItems.splice(index, 1);
           this.writeJSON(storageKey, allItems);
-          console.log('🗑️ [Popup] Item removed from storage, new count:', allItems.length);
+          window.VRCXExtended.Utils.safeConsoleLog('log', '🗑️ [Popup] Item removed from storage, new count:', allItems.length);
           
           // Verify deletion worked
           const verifyItems = this.readJSON(storageKey, []);
           const stillExists = verifyItems.findIndex(x => x.id === item.id) !== -1;
           if (stillExists) {
-            console.error('❌ [Popup] Item still exists after deletion!');
+            window.VRCXExtended.Utils.safeConsoleLog('error', '❌ [Popup] Item still exists after deletion!');
           } else {
-            console.log('✅ [Popup] Item successfully deleted from storage');
+            window.VRCXExtended.Utils.safeConsoleLog('log', '✅ [Popup] Item successfully deleted from storage');
           }
           
           // Remove the card element from the DOM immediately
@@ -281,7 +346,7 @@ window.VRCXExtended.Popup = {
               window.opener.$app.refreshVrcxThemes();
             }
           } catch (refreshError) {
-            console.warn('Failed to refresh after deletion:', refreshError);
+            window.VRCXExtended.Utils.safeConsoleLog('warn', 'Failed to refresh after deletion:', refreshError);
             refreshSuccess = false;
           }
           
@@ -297,39 +362,40 @@ window.VRCXExtended.Popup = {
         }
       });
 
-      const settingsIcon = document.createElement('i');
-      settingsIcon.className = 'el-icon-setting card-settings';
+      const settingsIcon = document.createElement('button');
+      settingsIcon.className = 'btn';
+      settingsIcon.innerHTML = '<i class="el-icon-setting"></i>';
       settingsIcon.title = 'Edit';
+      settingsIcon.style.padding = '4px 8px';
+      settingsIcon.style.backgroundColor = '#3a3a3a';
+      settingsIcon.style.borderColor = '#4a4a4a';
+      settingsIcon.style.color = '#ffffff';
+      
+      settingsIcon.addEventListener('mouseenter', () => {
+        settingsIcon.style.backgroundColor = '#4a4a4a';
+        settingsIcon.style.borderColor = '#5a5a5a';
+      });
+      
+      settingsIcon.addEventListener('mouseleave', () => {
+        settingsIcon.style.backgroundColor = '#3a3a3a';
+        settingsIcon.style.borderColor = '#4a4a4a';
+      });
+      
       settingsIcon.addEventListener('click', () => this.openSimpleEditor(item));
 
-      actions.appendChild(deleteIcon);
-      actions.appendChild(settingsIcon);
-      title.appendChild(name);
-      title.appendChild(actions);
-
-      const description = document.createElement('div');
-      description.className = 'card-description';
-      if (section === 'plugins') {
-        description.textContent = item.description || 'Custom JavaScript plugin for VRCX';
-      } else {
-        description.textContent = item.description || 'Custom CSS theme for VRCX';
-      }
-
-      const bottom = document.createElement('div');
-      bottom.className = 'card-bottom';
-
-      const meta = document.createElement('div');
-      meta.className = 'muted';
-      meta.style.fontSize = '12px';
-      meta.textContent = new Date(item.updatedAt || item.createdAt || Date.now()).toLocaleDateString();
-
+      // Toggle switch (moved to last place)
       const label = document.createElement('label');
       label.className = 'switch';
+      label.style.margin = '0';
+      label.style.display = 'flex';
+      label.style.alignItems = 'center';
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.checked = !!item.enabled;
       const slider = document.createElement('span');
       slider.className = 'slider';
+      slider.style.background = checkbox.checked ? 'var(--accent-1, #ff6b35)' : '#4a4a4a';
+      slider.style.borderColor = checkbox.checked ? 'var(--accent-1, #ff6b35)' : '#4a4a4a';
       label.appendChild(checkbox);
       label.appendChild(slider);
 
@@ -342,6 +408,10 @@ window.VRCXExtended.Popup = {
           allItems[index].enabled = checkbox.checked;
           allItems[index].updatedAt = this.nowIso();
           this.writeJSON(storageKey, allItems);
+          
+          // Update toggle styling
+          slider.style.background = checkbox.checked ? 'var(--accent-1, #ff6b35)' : '#4a4a4a';
+          slider.style.borderColor = checkbox.checked ? 'var(--accent-1, #ff6b35)' : '#4a4a4a';
           
           // Show notification for toggle action
           if (window.opener?.VRCXExtended?.Utils?.showNotification) {
@@ -361,12 +431,93 @@ window.VRCXExtended.Popup = {
         }
       });
 
-      bottom.appendChild(meta);
-      bottom.appendChild(label);
+      actions.appendChild(deleteIcon);
+      actions.appendChild(settingsIcon);
+      actions.appendChild(label);
+      header.appendChild(title);
+      header.appendChild(actions);
+      
+      // 2. Thumbnail - Description (Side by side)
+      const imageDescriptionContainer = document.createElement('div');
+      imageDescriptionContainer.style.display = 'flex';
+      imageDescriptionContainer.style.gap = '16px';
+      imageDescriptionContainer.style.alignItems = 'flex-start';
+      
+      // Thumbnail section
+      const thumbnailSection = document.createElement('div');
+      thumbnailSection.style.flexShrink = '0';
+      
+      const thumbnail = document.createElement('img');
+      thumbnail.src = item.thumbnail || 'https://picsum.photos/200';
+      thumbnail.alt = item.name + ' thumbnail';
+      thumbnail.style.width = '120px';
+      thumbnail.style.height = '80px';
+      thumbnail.style.objectFit = 'cover';
+      thumbnail.style.borderRadius = '6px';
+      thumbnail.style.border = '1px solid var(--surface-2, #3c3836)';
+      
+      thumbnailSection.appendChild(thumbnail);
+      
+      // Description section
+      const descriptionSection = document.createElement('div');
+      descriptionSection.style.flex = '1';
+      
+      const description = document.createElement('p');
+      if (section === 'plugins') {
+        description.textContent = item.description || 'Custom JavaScript plugin for VRCX';
+      } else {
+        description.textContent = item.description || 'Custom CSS theme for VRCX';
+      }
+      description.style.margin = '0';
+      description.style.color = 'var(--text-1, #ebdbb2)';
+      description.style.fontSize = '14px';
+      description.style.lineHeight = '1.4';
+      description.style.maxHeight = 'calc(1.4em * 4)'; // 4 lines max
+      description.style.overflow = 'hidden';
+      description.style.textOverflow = 'ellipsis';
+      description.style.display = '-webkit-box';
+      description.style.webkitLineClamp = '4';
+      description.style.webkitBoxOrient = 'vertical';
+      
+      descriptionSection.appendChild(description);
+      
+      imageDescriptionContainer.appendChild(thumbnailSection);
+      imageDescriptionContainer.appendChild(descriptionSection);
+      
+      // 3. Creator - Date (Footer)
+      const footer = document.createElement('div');
+      footer.style.display = 'flex';
+      footer.style.justifyContent = 'space-between';
+      footer.style.alignItems = 'center';
+      footer.style.fontSize = '12px';
+      footer.style.color = 'var(--text-2, #928374)';
+      
+      const creator = document.createElement('span');
+      creator.textContent = 'by ' + (item.creator || 'Unknown');
+      
+      const dates = document.createElement('span');
+      const updatedDate = new Date(item.updatedAt || item.createdAt || Date.now()).toLocaleDateString();
+      dates.textContent = 'Updated: ' + updatedDate;
 
-      card.appendChild(title);
-      card.appendChild(description);
-      card.appendChild(bottom);
+      footer.appendChild(creator);
+      footer.appendChild(dates);
+      
+      contentContainer.appendChild(header);
+      contentContainer.appendChild(imageDescriptionContainer);
+      contentContainer.appendChild(footer);
+      
+      card.appendChild(contentContainer);
+      
+      // Add hover effect
+      card.addEventListener('mouseenter', () => {
+        card.style.borderColor = 'var(--accent-1, #ff6b35)';
+        card.style.transform = 'translateY(-2px)';
+      });
+      
+      card.addEventListener('mouseleave', () => {
+        card.style.borderColor = 'var(--surface-2, #3c3836)';
+        card.style.transform = 'translateY(0)';
+      });
 
       return card;
     },
@@ -474,8 +625,14 @@ window.VRCXExtended.Popup = {
         // Show loading state
         list.innerHTML = '<div class="muted">Loading plugins from store...</div>';
         
-        // Use the Store module to fetch data
-        const plugins = await window.VRCXExtended.Store.fetchStoreData('plugins');
+        // Use the Store module from the main window
+        let plugins = [];
+        if (window.opener && window.opener.VRCXExtended && window.opener.VRCXExtended.Store) {
+          // Force refresh to get the latest data
+          plugins = await window.opener.VRCXExtended.Store.fetchStoreData('plugins', true);
+        } else {
+          throw new Error('Store module not available in main window');
+        }
         
         if (!plugins.length) {
           list.innerHTML = '<div class="muted">No plugins available in the store.</div>';
@@ -483,7 +640,7 @@ window.VRCXExtended.Popup = {
         }
         
         // Sort by update date
-        const sortedPlugins = window.VRCXExtended.Store.sortByUpdated(plugins);
+        const sortedPlugins = window.opener.VRCXExtended.Store.sortByUpdated(plugins);
         
         // Clear loading state
         list.innerHTML = '';
@@ -494,7 +651,7 @@ window.VRCXExtended.Popup = {
         });
         
       } catch (error) {
-        console.error('Failed to load store plugins:', error);
+        window.VRCXExtended.Utils.safeConsoleLog('error', 'Failed to load store plugins:', error);
         list.innerHTML = '<div class="muted">Failed to load plugins from store. Please check your connection and try again.</div>';
       }
     },
@@ -506,8 +663,16 @@ window.VRCXExtended.Popup = {
         // Show loading state
         list.innerHTML = '<div class="muted">Loading themes from store...</div>';
         
-        // Use the Store module to fetch data
-        const themes = await window.VRCXExtended.Store.fetchStoreData('themes');
+        // Use the Store module from the main window
+        let themes = [];
+        if (window.opener && window.opener.VRCXExtended && window.opener.VRCXExtended.Store) {
+          // Force refresh to get the latest data
+          themes = await window.opener.VRCXExtended.Store.fetchStoreData('themes', true);
+          
+
+        } else {
+          throw new Error('Store module not available in main window');
+        }
         
         if (!themes.length) {
           list.innerHTML = '<div class="muted">No themes available in the store.</div>';
@@ -515,7 +680,7 @@ window.VRCXExtended.Popup = {
         }
         
         // Sort by update date
-        const sortedThemes = window.VRCXExtended.Store.sortByUpdated(themes);
+        const sortedThemes = window.opener.VRCXExtended.Store.sortByUpdated(themes);
         
         // Clear loading state
         list.innerHTML = '';
@@ -526,7 +691,7 @@ window.VRCXExtended.Popup = {
         });
         
       } catch (error) {
-        console.error('Failed to load store themes:', error);
+        window.VRCXExtended.Utils.safeConsoleLog('error', 'Failed to load store themes:', error);
         list.innerHTML = '<div class="muted">Failed to load themes from store. Please check your connection and try again.</div>';
       }
     },
@@ -544,14 +709,76 @@ window.VRCXExtended.Popup = {
       // Card content container
       const contentContainer = document.createElement('div');
       contentContainer.style.display = 'flex';
-      contentContainer.style.gap = '16px';
+      contentContainer.style.flexDirection = 'column';
+      contentContainer.style.gap = '12px';
+      
+      // 1. Title - Button (Header)
+      const header = document.createElement('div');
+      header.style.display = 'flex';
+      header.style.justifyContent = 'space-between';
+      header.style.alignItems = 'center';
+      header.style.marginBottom = '8px';
+      
+      const title = document.createElement('h3');
+      title.textContent = item.name;
+      title.style.margin = '0';
+      title.style.color = 'var(--text-0, #ebdbb2)';
+      title.style.fontSize = '16px';
+      title.style.fontWeight = '600';
+      
+      // Toggle switch for install status
+      const label = document.createElement('label');
+      label.className = 'switch';
+      label.style.margin = '0';
+      label.style.display = 'flex';
+      label.style.alignItems = 'center';
+      
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      
+      // Check if item is already installed
+      const storageKey = type === 'plugin' ? KEYS.PLUGINS : KEYS.THEMES;
+      const installedItems = this.readJSON(storageKey, []);
+      const isInstalled = installedItems.some(installed => 
+        installed.name === item.name && installed.creator === item.creator
+      );
+      checkbox.checked = isInstalled;
+      
+      const slider = document.createElement('span');
+      slider.className = 'slider';
+      slider.style.background = checkbox.checked ? 'var(--accent-1, #ff6b35)' : '#4a4a4a';
+      slider.style.borderColor = checkbox.checked ? 'var(--accent-1, #ff6b35)' : '#4a4a4a';
+      
+      label.appendChild(checkbox);
+      label.appendChild(slider);
+
+      checkbox.addEventListener('change', () => {
+        // Update toggle styling
+        slider.style.background = checkbox.checked ? 'var(--accent-1, #ff6b35)' : '#4a4a4a';
+        slider.style.borderColor = checkbox.checked ? 'var(--accent-1, #ff6b35)' : '#4a4a4a';
+        
+        if (checkbox.checked) {
+          this.installStoreItem(item, type, checkbox);
+        } else {
+          this.uninstallStoreItem(item, type, checkbox);
+        }
+      });
+      
+      header.appendChild(title);
+      header.appendChild(label);
+      
+      // 2. Image - Description (Side by side)
+      const imageDescriptionContainer = document.createElement('div');
+      imageDescriptionContainer.style.display = 'flex';
+      imageDescriptionContainer.style.gap = '16px';
+      imageDescriptionContainer.style.alignItems = 'flex-start';
       
       // Thumbnail section
       const thumbnailSection = document.createElement('div');
       thumbnailSection.style.flexShrink = '0';
       
       const thumbnail = document.createElement('img');
-      thumbnail.src = item.thumbnail || 'https://via.placeholder.com/300x200/666666/ffffff?text=No+Image';
+      thumbnail.src = item.thumbnail || 'https://picsum.photos/200';
       thumbnail.alt = item.name + ' thumbnail';
       thumbnail.style.width = '120px';
       thumbnail.style.height = '80px';
@@ -561,61 +788,35 @@ window.VRCXExtended.Popup = {
       
       thumbnailSection.appendChild(thumbnail);
       
-      // Content section
-      const contentSection = document.createElement('div');
-      contentSection.style.flex = '1';
-      contentSection.style.display = 'flex';
-      contentSection.style.flexDirection = 'column';
+      // Description section
+      const descriptionSection = document.createElement('div');
+      descriptionSection.style.flex = '1';
       
-      // Card header
-      const header = document.createElement('div');
-      header.style.display = 'flex';
-      header.style.justifyContent = 'space-between';
-      header.style.alignItems = 'flex-start';
-      header.style.marginBottom = '12px';
-      
-      const title = document.createElement('h3');
-      title.textContent = item.name;
-      title.style.margin = '0';
-      title.style.color = 'var(--text-0, #ebdbb2)';
-      title.style.fontSize = '16px';
-      title.style.fontWeight = '600';
-      
-      const installBtn = document.createElement('button');
-      installBtn.textContent = 'Install';
-      installBtn.className = 'btn primary';
-      installBtn.style.backgroundColor = 'var(--accent-1, #66b1ff)';
-      installBtn.style.borderColor = 'var(--accent-1, #66b1ff)';
-      installBtn.style.color = 'var(--text-0, #282828)';
-      installBtn.style.padding = '6px 12px';
-      installBtn.style.fontSize = '12px';
-      installBtn.style.borderRadius = '4px';
-      installBtn.style.cursor = 'pointer';
-      installBtn.style.border = 'none';
-      installBtn.style.transition = 'all 0.2s';
-      
-      installBtn.addEventListener('click', () => {
-        this.installStoreItem(item, type);
-      });
-      
-      header.appendChild(title);
-      header.appendChild(installBtn);
-      
-      // Description
       const description = document.createElement('p');
       description.textContent = item.description;
-      description.style.margin = '0 0 12px 0';
+      description.style.margin = '0';
       description.style.color = 'var(--text-1, #ebdbb2)';
       description.style.fontSize = '14px';
       description.style.lineHeight = '1.4';
+      description.style.maxHeight = 'calc(1.4em * 4)'; // 4 lines max
+      description.style.overflow = 'hidden';
+      description.style.textOverflow = 'ellipsis';
+      description.style.display = '-webkit-box';
+      description.style.webkitLineClamp = '4';
+      description.style.webkitBoxOrient = 'vertical';
       
-      // Meta information
-      const meta = document.createElement('div');
-      meta.style.display = 'flex';
-      meta.style.justifyContent = 'space-between';
-      meta.style.alignItems = 'center';
-      meta.style.fontSize = '12px';
-      meta.style.color = 'var(--text-2, #928374)';
+      descriptionSection.appendChild(description);
+      
+      imageDescriptionContainer.appendChild(thumbnailSection);
+      imageDescriptionContainer.appendChild(descriptionSection);
+      
+      // 3. Creator (Footer)
+      const creatorSection = document.createElement('div');
+      creatorSection.style.display = 'flex';
+      creatorSection.style.justifyContent = 'space-between';
+      creatorSection.style.alignItems = 'center';
+      creatorSection.style.fontSize = '12px';
+      creatorSection.style.color = 'var(--text-2, #928374)';
       
       const creator = document.createElement('span');
       creator.textContent = 'by ' + item.creator;
@@ -624,21 +825,18 @@ window.VRCXExtended.Popup = {
       const updatedDate = new Date(item.dateUpdated).toLocaleDateString();
       dates.textContent = 'Updated: ' + updatedDate;
       
-      meta.appendChild(creator);
-      meta.appendChild(dates);
+      creatorSection.appendChild(creator);
+      creatorSection.appendChild(dates);
       
-      contentSection.appendChild(header);
-      contentSection.appendChild(description);
-      contentSection.appendChild(meta);
-      
-      contentContainer.appendChild(thumbnailSection);
-      contentContainer.appendChild(contentSection);
+      contentContainer.appendChild(header);
+      contentContainer.appendChild(imageDescriptionContainer);
+      contentContainer.appendChild(creatorSection);
       
       card.appendChild(contentContainer);
       
       // Add hover effect
       card.addEventListener('mouseenter', () => {
-        card.style.borderColor = 'var(--accent-1, #66b1ff)';
+        card.style.borderColor = 'var(--accent-1, #ff6b35)';
         card.style.transform = 'translateY(-2px)';
       });
       
@@ -650,15 +848,196 @@ window.VRCXExtended.Popup = {
       return card;
     },
 
-    installStoreItem(item, type) {
-      // For now, just show a notification
-      const itemType = type === 'plugin' ? 'Plugin' : 'Theme';
-      const message = itemType + ' "' + item.name + '" installation not yet implemented.';
+    async installStoreItem(item, type, checkbox) {
+      const storageKey = type === 'plugin' ? KEYS.PLUGINS : KEYS.THEMES;
+      const installedItems = this.readJSON(storageKey, []);
       
-      if (window.opener?.VRCXExtended?.Utils?.showNotification) {
-        window.opener.VRCXExtended.Utils.showNotification(message, 'info');
+      // Check if already installed
+      const existingIndex = installedItems.findIndex(installed => 
+        installed.name === item.name && installed.creator === item.creator
+      );
+      
+      if (existingIndex === -1) {
+        try {
+          // Fetch the actual file content
+          const fileContent = await this.fetchStoreFile(item, type);
+          
+          // Create new item from store data with actual file content
+          const newItem = {
+            id: this.uid(),
+            name: item.name,
+            description: item.description,
+            creator: item.creator,
+            thumbnail: item.thumbnail,
+            code: fileContent,
+            enabled: true,
+            createdAt: this.nowIso(),
+            updatedAt: this.nowIso()
+          };
+          
+          installedItems.push(newItem);
+          this.writeJSON(storageKey, installedItems);
+          
+          const itemType = type === 'plugin' ? 'Plugin' : 'Theme';
+          const message = itemType + ' "' + item.name + '" installed successfully!';
+          
+          if (window.opener?.VRCXExtended?.Utils?.showNotification) {
+            window.opener.VRCXExtended.Utils.showNotification(message, 'success');
+          }
+          
+          // Refresh the opener window
+          if (type === 'plugin' && window.opener?.$app?.refreshVrcxPlugins) {
+            window.opener.$app.refreshVrcxPlugins();
+          }
+          if (type === 'theme' && window.opener?.$app?.refreshVrcxThemes) {
+            window.opener.$app.refreshVrcxThemes();
+          }
+        } catch (error) {
+          // Fallback to default code if file fetch fails
+          window.VRCXExtended.Utils.safeConsoleLog('error', '❌ [Popup] File fetch failed, using fallback:', error);
+          
+          const newItem = {
+            id: this.uid(),
+            name: item.name,
+            description: item.description,
+            creator: item.creator,
+            thumbnail: item.thumbnail,
+            code: this.getDefaultCode(type, item),
+            enabled: true,
+            createdAt: this.nowIso(),
+            updatedAt: this.nowIso()
+          };
+          
+          installedItems.push(newItem);
+          this.writeJSON(storageKey, installedItems);
+          
+          const itemType = type === 'plugin' ? 'Plugin' : 'Theme';
+          const message = itemType + ' "' + item.name + '" installed with fallback code.';
+          
+          if (window.opener?.VRCXExtended?.Utils?.showNotification) {
+            window.opener.VRCXExtended.Utils.showNotification(message, 'warning');
+          }
+        }
       } else {
-        alert(message);
+        // Already installed, just update the toggle state
+        checkbox.checked = true;
+        slider.style.background = 'var(--accent-1, #ff6b35)';
+        slider.style.borderColor = 'var(--accent-1, #ff6b35)';
+      }
+    },
+
+    async fetchStoreFile(item, type) {
+      // Get the base URL from the main window's config
+      const config = window.opener?.VRCXExtended?.Config;
+      if (!config) {
+        throw new Error('Config not available');
+      }
+      
+      const settings = config.getSettings();
+      const isDebugMode = settings.debugMode || false;
+      
+      // Determine the base URL using config
+      let baseUrl;
+      if (isDebugMode) {
+        // For debug mode, use local paths from config
+        baseUrl = config.STORE.LOCAL[type === 'plugin' ? 'PLUGINS' : 'THEMES'].replace('/' + type + 's.json', '');
+        window.VRCXExtended.Utils.safeConsoleLog('log', '🔍 [Popup] Debug mode enabled, using local path:', baseUrl);
+      } else {
+        // Use GitHub URL from config
+        baseUrl = config.STORE.GITHUB.BASE_URL + '/store';
+        window.VRCXExtended.Utils.safeConsoleLog('log', '🔍 [Popup] Using GitHub URL:', baseUrl);
+      }
+      
+      // Use the filename which now includes the folder path
+      const fileUrl = baseUrl + '/' + item.filename;
+      
+      // Debug logging
+      window.VRCXExtended.Utils.safeConsoleLog('log', '🔍 [Popup] Fetching file:', fileUrl);
+      window.VRCXExtended.Utils.safeConsoleLog('log', '🔍 [Popup] Debug mode:', isDebugMode);
+      window.VRCXExtended.Utils.safeConsoleLog('log', '🔍 [Popup] Item filename:', item.filename);
+      
+      const response = await fetch(fileUrl);
+      if (!response.ok) {
+        window.VRCXExtended.Utils.safeConsoleLog('error', '❌ [Popup] HTTP Error:', response.status, response.statusText);
+        window.VRCXExtended.Utils.safeConsoleLog('error', '❌ [Popup] Failed URL:', fileUrl);
+        throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+      }
+      
+      const content = await response.text();
+      window.VRCXExtended.Utils.safeConsoleLog('log', '✅ [Popup] Successfully fetched file, length:', content.length);
+      return content;
+    },
+
+    uninstallStoreItem(item, type, checkbox) {
+      const storageKey = type === 'plugin' ? KEYS.PLUGINS : KEYS.THEMES;
+      const installedItems = this.readJSON(storageKey, []);
+      
+      // Find and remove the item
+      const index = installedItems.findIndex(installed => 
+        installed.name === item.name && installed.creator === item.creator
+      );
+      
+      if (index !== -1) {
+        installedItems.splice(index, 1);
+        this.writeJSON(storageKey, installedItems);
+        
+        const itemType = type === 'plugin' ? 'Plugin' : 'Theme';
+        const message = itemType + ' "' + item.name + '" uninstalled successfully!';
+        
+        if (window.opener?.VRCXExtended?.Utils?.showNotification) {
+          window.opener.VRCXExtended.Utils.showNotification(message, 'info');
+        }
+        
+        // Refresh the opener window
+        if (type === 'plugin' && window.opener?.$app?.refreshVrcxPlugins) {
+          window.opener.$app.refreshVrcxPlugins();
+        }
+        if (type === 'theme' && window.opener?.$app?.refreshVrcxThemes) {
+          window.opener.$app.refreshVrcxThemes();
+        }
+      } else {
+        // Not installed, reset the toggle state
+        checkbox.checked = false;
+        slider.style.background = '#4a4a4a';
+        slider.style.borderColor = '#4a4a4a';
+      }
+    },
+
+    getDefaultCode(type, item) {
+      if (type === 'plugin') {
+        return '//\\n' +
+               '// ==PLUGIN==\\n' +
+               '// @name         ' + item.name + '\\n' +
+               '// @description  ' + item.description + '\\n' +
+               '// @creator      ' + item.creator + '\\n' +
+               '// @dateCreated  ' + item.dateCreated + '\\n' +
+               '// @dateUpdated  ' + item.dateUpdated + '\\n' +
+               '// ==PLUGIN==\\n' +
+               '//\\n' +
+               '\\n' +
+               '// ' + item.name + ' Plugin\\n' +
+               '(function() {\\n' +
+               '  \\'use strict\\';\\n' +
+               '  \\n' +
+               '  console.log(\\'' + item.name + ' loaded!\\');\\n' +
+               '  \\n' +
+               '  // Your plugin code here\\n' +
+               '  \\n' +
+               '})();';
+      } else {
+        return '/**\\n' +
+               '// ==THEME==\\n' +
+               '// @name         ' + item.name + '\\n' +
+               '// @description  ' + item.description + '\\n' +
+               '// @creator      ' + item.creator + '\\n' +
+               '// @dateCreated  ' + item.dateCreated + '\\n' +
+               '// @dateUpdated  ' + item.dateUpdated + '\\n' +
+               '// ==THEME==\\n' +
+               '*/\\n' +
+               '\\n' +
+               '/** ' + item.name + ' Theme for VRCX-Extended */\\n' +
+               '\\n' +
+               '/** Your theme CSS here */';
       }
     },
 
@@ -727,18 +1106,18 @@ window.VRCXExtended.Popup = {
       cacheInfo.style.fontSize = '12px';
       cacheInfo.textContent = 'When disabled, modules will always be downloaded fresh instead of using cached versions. Useful for development but slower loading.';
       
-      // Clear cache button
-      const clearCacheBtn = document.createElement('button');
-      clearCacheBtn.className = 'btn';
-      clearCacheBtn.style.backgroundColor = 'var(--accent-1, #66b1ff)';
-      clearCacheBtn.style.borderColor = 'var(--accent-1, #66b1ff)';
-      clearCacheBtn.style.color = 'var(--text-0, #282828)';
-      clearCacheBtn.style.alignSelf = 'flex-start';
-      clearCacheBtn.style.fontSize = '11px';
-      clearCacheBtn.style.padding = '4px 8px';
-      clearCacheBtn.textContent = '🗑️ Clear Module Cache';
+      // Clear module cache button
+      const clearModuleCacheBtn = document.createElement('button');
+      clearModuleCacheBtn.className = 'btn';
+      clearModuleCacheBtn.style.backgroundColor = 'var(--accent-1, #ff6b35)';
+      clearModuleCacheBtn.style.borderColor = 'var(--accent-1, #ff6b35)';
+      clearModuleCacheBtn.style.color = 'var(--text-0, #282828)';
+      clearModuleCacheBtn.style.alignSelf = 'flex-start';
+      clearModuleCacheBtn.style.fontSize = '11px';
+      clearModuleCacheBtn.style.padding = '4px 8px';
+      clearModuleCacheBtn.textContent = '🗑️ Clear Module Cache';
       
-      clearCacheBtn.addEventListener('click', () => {
+      clearModuleCacheBtn.addEventListener('click', () => {
         if (window.opener?.VRCXExtended?.ModuleSystem?.clearAllCache) {
           const clearedCount = window.opener.VRCXExtended.ModuleSystem.clearAllCache();
           if (clearedCount > 0) {
@@ -751,9 +1130,39 @@ window.VRCXExtended.Popup = {
         }
       });
       
+      // Clear store cache button
+      const clearStoreCacheBtn = document.createElement('button');
+      clearStoreCacheBtn.className = 'btn';
+      clearStoreCacheBtn.style.backgroundColor = 'var(--accent-2, #ff8c42)';
+      clearStoreCacheBtn.style.borderColor = 'var(--accent-2, #ff8c42)';
+      clearStoreCacheBtn.style.color = 'var(--text-0, #282828)';
+      clearStoreCacheBtn.style.alignSelf = 'flex-start';
+      clearStoreCacheBtn.style.fontSize = '11px';
+      clearStoreCacheBtn.style.padding = '4px 8px';
+      clearStoreCacheBtn.style.marginTop = '8px';
+      clearStoreCacheBtn.textContent = '🔄 Clear Store Cache';
+      
+      clearStoreCacheBtn.addEventListener('click', () => {
+        if (window.opener?.VRCXExtended?.Store?.clearCache) {
+          window.opener.VRCXExtended.Store.clearCache('all');
+          alert('Store cache cleared successfully. Store data will be refreshed on next load.');
+          
+          // Force refresh the current store section if we're on the store tab
+          const currentSection = this.getSection();
+          if (currentSection === 'store') {
+            setTimeout(() => {
+              this.renderCurrentSection();
+            }, 100);
+          }
+        } else {
+          alert('Store cache clearing not available.');
+        }
+      });
+      
       cacheContent.appendChild(cacheToggleContainer);
       cacheContent.appendChild(cacheInfo);
-      cacheContent.appendChild(clearCacheBtn);
+      cacheContent.appendChild(clearModuleCacheBtn);
+      cacheContent.appendChild(clearStoreCacheBtn);
       cacheCard.appendChild(cacheTitle);
       cacheCard.appendChild(cacheContent);
       
@@ -808,10 +1217,48 @@ window.VRCXExtended.Popup = {
       debugToggleContainer.appendChild(debugCheckbox);
       debugToggleContainer.appendChild(debugLabel);
       
+      // Disable fallback toggle
+      const fallbackToggleContainer = document.createElement('div');
+      fallbackToggleContainer.style.display = 'flex';
+      fallbackToggleContainer.style.alignItems = 'center';
+      fallbackToggleContainer.style.gap = '8px';
+      fallbackToggleContainer.style.marginTop = '8px';
+      
+      const fallbackCheckbox = document.createElement('input');
+      fallbackCheckbox.type = 'checkbox';
+      fallbackCheckbox.id = 'disableFallbackCheckbox';
+      fallbackCheckbox.style.transform = 'scale(1.1)';
+      
+      // Get current fallback setting
+      fallbackCheckbox.checked = currentSettings.disableFallback || false;
+      
+      const fallbackLabel = document.createElement('label');
+      fallbackLabel.htmlFor = 'disableFallbackCheckbox';
+      fallbackLabel.style.cursor = 'pointer';
+      fallbackLabel.style.userSelect = 'none';
+      fallbackLabel.style.fontSize = '12px';
+      fallbackLabel.textContent = 'Disable GitHub fallback (local files only)';
+      
+      fallbackCheckbox.addEventListener('change', () => {
+        if (window.opener?.VRCXExtended?.Config?.setSetting) {
+          window.opener.VRCXExtended.Config.setSetting('disableFallback', fallbackCheckbox.checked);
+          
+          if (window.opener?.VRCXExtended?.Utils?.showNotification) {
+            window.opener.VRCXExtended.Utils.showNotification(
+              fallbackCheckbox.checked ? 'GitHub fallback disabled - will only load from local files' : 'GitHub fallback enabled - will fall back to GitHub if local files fail',
+              'success'
+            );
+          }
+        }
+      });
+      
+      fallbackToggleContainer.appendChild(fallbackCheckbox);
+      fallbackToggleContainer.appendChild(fallbackLabel);
+      
       const debugInfo = document.createElement('div');
       debugInfo.className = 'muted';
       debugInfo.style.fontSize = '11px';
-      debugInfo.innerHTML = 'When enabled, VRCX-Extended will load modules from local file paths instead of GitHub. If local files are not available, it will automatically fall back to GitHub. This requires the files to be available at:<br><br><code>file://vrcx/extended/modules/</code><br><code>file://vrcx/extended/html/</code><br><code>file://vrcx/extended/stylesheet/</code><br><br><strong>Note:</strong> You must refresh the page after changing this setting.';
+      debugInfo.innerHTML = 'When debug mode is enabled, VRCX-Extended will load modules from local file paths instead of GitHub. If local files are not available, it will automatically fall back to GitHub (unless disabled below). This requires the files to be available at:<br><br><code>file://vrcx/extended/modules/</code><br><code>file://vrcx/extended/html/</code><br><code>file://vrcx/extended/stylesheet/</code><br><br><strong>Note:</strong> You must refresh the page after changing these settings.';
       
       // Local paths info
       const pathsInfo = document.createElement('div');
@@ -828,6 +1275,7 @@ window.VRCXExtended.Popup = {
         'Stylesheets: file://vrcx/extended/stylesheet/';
       
       debugContent.appendChild(debugToggleContainer);
+      debugContent.appendChild(fallbackToggleContainer);
       debugContent.appendChild(debugInfo);
       debugContent.appendChild(pathsInfo);
       debugCard.appendChild(debugTitle);
@@ -925,6 +1373,22 @@ window.VRCXExtended.Popup = {
       descriptionInput.id = 'editor-description-input';
       field.appendChild(descriptionInput);
 
+      const creatorInput = document.createElement('input');
+      creatorInput.type = 'text';
+      creatorInput.placeholder = 'Creator name (optional)';
+      creatorInput.value = item?.creator || '';
+      creatorInput.style.marginTop = '12px';
+      creatorInput.id = 'editor-creator-input';
+      field.appendChild(creatorInput);
+
+      const thumbnailInput = document.createElement('input');
+      thumbnailInput.type = 'text';
+      thumbnailInput.placeholder = 'Thumbnail URL (optional)';
+      thumbnailInput.value = item?.thumbnail || 'https://picsum.photos/200';
+      thumbnailInput.style.marginTop = '12px';
+      thumbnailInput.id = 'editor-thumbnail-input';
+      field.appendChild(thumbnailInput);
+
       const editorHost = document.createElement('div');
       editorHost.className = 'editor-host';
       const textarea = document.createElement('textarea');
@@ -977,7 +1441,7 @@ window.VRCXExtended.Popup = {
           }, 50);
           
         } catch (error) {
-          console.error('CodeMirror initialization error:', error);
+          window.VRCXExtended.Utils.safeConsoleLog('error', 'CodeMirror initialization error:', error);
         }
       }, 100);
 
@@ -985,9 +1449,9 @@ window.VRCXExtended.Popup = {
         if (editor) {
           try {
             editor.toTextArea();
-          } catch(e) {
-            console.warn('Error disposing CodeMirror:', e);
-          }
+                  } catch(e) {
+          window.VRCXExtended.Utils.safeConsoleLog('warn', 'Error disposing CodeMirror:', e);
+        }
         }
         root.style.display = 'none';
         root.innerHTML = '';
@@ -1001,6 +1465,8 @@ window.VRCXExtended.Popup = {
         const data = window.VRCXExtended.PopupManager.readJSON(storageKey, []);
         const name = nameInput.value.trim() || (isPlugin? 'Untitled Plugin' : 'Untitled Theme');
         const description = descriptionInput.value.trim();
+        const creator = creatorInput.value.trim();
+        const thumbnail = thumbnailInput.value.trim() || 'https://picsum.photos/200';
         
         let code = '';
         if (editor) {
@@ -1018,6 +1484,8 @@ window.VRCXExtended.Popup = {
           if (index !== -1) {
             data[index].name = name;
             data[index].description = description;
+            data[index].creator = creator;
+            data[index].thumbnail = thumbnail;
             data[index].code = code;
             data[index].updatedAt = window.VRCXExtended.PopupManager.nowIso();
           }
@@ -1026,6 +1494,8 @@ window.VRCXExtended.Popup = {
             id: window.VRCXExtended.PopupManager.uid(),
             name,
             description,
+            creator,
+            thumbnail,
             code,
             enabled: true,
             createdAt: window.VRCXExtended.PopupManager.nowIso(),
@@ -1106,13 +1576,29 @@ window.VRCXExtended.Popup = {
     window.VRCXExtended.PopupManager.openSimpleEditor(null)
   );
 
+  // Add Ctrl+R reload functionality
+  document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'r') {
+      e.preventDefault();
+      window.VRCXExtended.Utils.safeConsoleLog('log', '🔄 [Popup] Reloading popup window...');
+      
+      // Instead of browser reload, rebuild the window content
+      if (window.opener && window.opener.VRCXExtended && window.opener.VRCXExtended.Popup) {
+        window.opener.VRCXExtended.Popup.buildManagerWindow();
+      } else {
+        // Fallback to browser reload if opener is not available
+        window.location.reload();
+      }
+    }
+  });
+
   // Apply Material 3 theme
   document.body.className = 'x-container theme-material3';
 
   // Initial render
   window.VRCXExtended.PopupManager.setSection('plugins');
   
-  console.log('VRCX-Extended popup initialized successfully');
+  window.VRCXExtended.Utils.safeConsoleLog('log', 'VRCX-Extended popup initialized successfully');
 })();
     `;
   }

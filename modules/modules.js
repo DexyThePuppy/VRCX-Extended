@@ -9,6 +9,37 @@
  */
 window.VRCXExtended = window.VRCXExtended || {};
 
+// Global logging system for cross-window communication
+window.VRCXExtended.logToMainWindow = function(level, prefix, ...args) {
+    // This function will be called from popup windows to log to main window
+    const originalMethod = console[level] || console.log;
+    originalMethod.apply(console, [prefix, ...args]);
+};
+
+// Global store bridge for cross-window communication
+window.VRCXExtended.getStoreData = async function(type) {
+    // This function will be called from popup windows to get store data
+    if (window.VRCXExtended.Store && window.VRCXExtended.Store.fetchStoreData) {
+        return await window.VRCXExtended.Store.fetchStoreData(type);
+    } else {
+        throw new Error('Store module not available');
+    }
+};
+
+window.VRCXExtended.sortStoreData = function(items) {
+    // This function will be called from popup windows to sort store data
+    if (window.VRCXExtended.Store && window.VRCXExtended.Store.sortByUpdated) {
+        return window.VRCXExtended.Store.sortByUpdated(items);
+    } else {
+        // Fallback sorting
+        return items.slice().sort((a, b) => {
+            const dateA = new Date(a.dateUpdated);
+            const dateB = new Date(b.dateUpdated);
+            return dateB - dateA;
+        });
+    }
+};
+
 window.VRCXExtended.ModuleSystem = {
     // Module configuration and dependencies
     config: {
@@ -26,7 +57,7 @@ window.VRCXExtended.ModuleSystem = {
         dependencyGroups: [
             ['config.js', 'utils.js'], // Core dependencies (parallel)
             ['injection.js'],           // Injection system
-            ['ui.js', 'editor.js', 'store.js'], // UI components and store (parallel)
+            ['ui.js', 'store.js'], // UI components and store (parallel)
             ['popup.js']               // Popup (depends on all above)
         ],
         
@@ -634,7 +665,7 @@ window.VRCXExtended.ModuleSystem = {
             return false;
         }
 
-        const { Config, Utils, Injection, UI, Editor, Popup } = window.VRCXExtended;
+        const { Config, Utils, Injection, UI, Popup } = window.VRCXExtended;
         const requiredModules = { Config, Utils, Injection, UI, Popup };
         
         const missingModules = Object.entries(requiredModules)
