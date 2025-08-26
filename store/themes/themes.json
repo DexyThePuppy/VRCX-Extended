@@ -1,29 +1,43 @@
 [
   {
-    "name": "Dark Material Pro",
+    "name": "K-UI",
     "description": "A sleek dark theme with Material Design principles, featuring smooth animations and modern UI elements.",
-    "creator": "ThemeMaster",
-    "dateCreated": "2024-01-20T08:30:00Z",
-    "dateUpdated": "2024-03-22T12:15:00Z",
-    "filename": "dark-material-pro/theme.css",
-    "thumbnail": "https://picsum.photos/200"
+    "creator": "Mezque",
+    "source": "https://github.com/Mezque/VRCXThemes",
+    "dateCreated": "2022-01-14T00:00:00Z",
+    "dateUpdated": "2022-01-21T13:00:00Z",
+    "filename": "K-UI/theme.css",
+    "thumbnail": "K-UI/thumbnail.png"
   },
   {
-    "name": "Neon Cyberpunk",
+    "name": "Midnight Purple",
     "description": "Futuristic cyberpunk theme with neon accents, glowing effects, and high contrast elements for an immersive experience.",
-    "creator": "CyberDesign",
-    "dateCreated": "2024-02-05T15:20:00Z",
-    "dateUpdated": "2024-03-19T09:45:00Z",
-    "filename": "neon-cyberpunk/theme.css",
-    "thumbnail": "https://picsum.photos/200"
+    "creator": "Mezque",
+    "source": "https://github.com/Mezque/VRCXThemes",
+    "dateCreated": "2022-09-25T00:00:00Z",
+    "dateUpdated": "2022-09-25T00:00:00Z",
+    "filename": "Midnight-purple/theme.css",
+    "thumbnail": "Midnight-purple/thumbnail.png"
   },
   {
-    "name": "Nature Forest",
+    "name": "Nord",
     "description": "Calming nature-inspired theme with earth tones, organic shapes, and subtle animations that bring the outdoors to your VRCX experience.",
-    "creator": "EcoThemes",
-    "dateCreated": "2024-01-12T14:10:00Z",
-    "dateUpdated": "2024-03-16T17:30:00Z",
-    "filename": "nature-forest/theme.css",
-    "thumbnail": "https://picsum.photos/200"
+    "creator": "Mezque",
+    "source": "https://github.com/Mezque/VRCXThemes",
+    "dateCreated": "2022-01-24T00:00:00Z",
+    "dateUpdated": "2022-01-24T00:00:00Z",
+    "filename": "Nord/theme.css",
+    "thumbnail": "Nord/thumbnail.png"
+  },
+  {
+    "name": "Vencord",
+    "description": "Vencord theme from Vencord.",
+    "creator": "Dexy",
+    "source": "https://github.com/refact0r/midnight-discord",
+    "dateCreated": "2025-08-26T00:00:00Z",
+    "dateUpdated": "2025-08-26T00:00:00Z",
+    "filename": "Vencord/theme.css",
+    "thumbnail": "Vencord/thumbnail.png"
   }
+
 ]

@@ -54,14 +54,13 @@ window.VRCXExtended.Store = {
         throw new Error(`Invalid data format: expected array, got ${typeof data}`);
       }
 
-      // Validate each item has required fields
-      const validatedData = data.filter(item => this.validateStoreItem(item, type));
+      // Process and validate each item
+      const processedData = data.map(item => this.processStoreItem(item, type));
+      const validatedData = processedData.filter(item => this.validateStoreItem(item, type));
       
       if (validatedData.length !== data.length) {
         utils.safeConsoleLog('warn', `⚠️ [Store] Filtered out ${data.length - validatedData.length} invalid ${type} items`);
       }
-      
-
 
       // Cache the validated data
       config.setStoreCache(type, validatedData);
@@ -81,6 +80,34 @@ window.VRCXExtended.Store = {
       
       throw error;
     }
+  },
+
+  /**
+   * Process a store item to convert relative paths to full URLs
+   * @param {Object} item - Store item to process
+   * @param {string} type - 'plugins' or 'themes'
+   * @returns {Object} Processed item with full URLs
+   */
+  processStoreItem(item, type) {
+    const config = window.VRCXExtended.Config;
+    const settings = config.getSettings();
+    const isDebugMode = settings.debugMode || false;
+    
+    // Create a copy of the item to avoid modifying the original
+    const processedItem = { ...item };
+    
+    // Convert relative thumbnail path to full URL
+    if (processedItem.thumbnail && !this.isValidUrl(processedItem.thumbnail)) {
+      if (isDebugMode) {
+        // For debug mode, use local file path
+        processedItem.thumbnail = `file://vrcx/extended/store/${type}/${processedItem.thumbnail}`;
+      } else {
+        // For production, use GitHub URL
+        processedItem.thumbnail = `${config.STORE.GITHUB.BASE_URL}/store/${type}/${processedItem.thumbnail}`;
+      }
+    }
+    
+    return processedItem;
   },
 
   /**
@@ -110,8 +137,8 @@ window.VRCXExtended.Store = {
       return false;
     }
 
-    // Validate thumbnail URL
-    if (!this.isValidUrl(item.thumbnail)) {
+    // Validate thumbnail URL (after processing, should be a valid URL)
+    if (!item.thumbnail || !this.isValidUrl(item.thumbnail)) {
       const utils = window.VRCXExtended.Utils;
       utils.safeConsoleLog('warn', `⚠️ [Store] Item has invalid thumbnail URL:`, item.thumbnail);
       return false;

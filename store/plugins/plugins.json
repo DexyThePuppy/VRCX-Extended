@@ -1,29 +1,20 @@
 [
   {
-    "name": "VRCX Chat Enhancer",
-    "description": "Enhances the VRCX chat interface with additional features like message filtering, custom emotes, and improved formatting.",
-    "creator": "VRCX Community",
-    "dateCreated": "2024-01-15T10:30:00Z",
-    "dateUpdated": "2024-03-20T14:45:00Z",
-    "filename": "vrcx-chat-enhancer/plugin.js",
-    "thumbnail": "https://picsum.photos/200"
+    "name": "Top Navbar",
+    "description": "Moves the navbar to the top of the app.",
+    "creator": "Dexy",
+    "dateCreated": "2025-08-26T11:45:00Z",
+    "dateUpdated": "2025-08-26T11:45:00Z",
+    "filename": "navbar-on-top/plugin.js",
+    "thumbnail": "navbar-on-top/thumbnail.png"
   },
   {
-    "name": "World Tracker Pro",
-    "description": "Advanced world tracking with detailed analytics, visit history, and favorite world management.",
-    "creator": "VRDev Studios",
-    "dateCreated": "2024-02-10T09:15:00Z",
-    "dateUpdated": "2024-03-18T16:20:00Z",
-    "filename": "world-tracker-pro/plugin.js",
-    "thumbnail": "https://picsum.photos/200"
-  },
-  {
-    "name": "Friend Activity Monitor",
-    "description": "Real-time monitoring of friend activities with notifications and activity history tracking.",
-    "creator": "SocialVR Labs",
-    "dateCreated": "2024-01-28T11:45:00Z",
-    "dateUpdated": "2024-03-15T13:30:00Z",
-    "filename": "friend-activity-monitor/plugin.js",
-    "thumbnail": "https://picsum.photos/200"
+    "name": "User Profile Card Background",
+    "description": "Creates User Profile Card Background like Discord.",
+    "creator": "Dexy",
+    "dateCreated": "2025-08-26T11:45:00Z",
+    "dateUpdated": "2025-08-26T11:45:00Z",
+    "filename": "User-profile-card-bg/plugin.js",
+    "thumbnail": "User-profile-card-bg/thumbnail.png"
   }
 ]

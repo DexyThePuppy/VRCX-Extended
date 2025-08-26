@@ -455,7 +455,7 @@ window.VRCXExtended.Popup = {
       const thumbnail = document.createElement('img');
       thumbnail.src = item.thumbnail || 'https://picsum.photos/200';
       thumbnail.alt = item.name + ' thumbnail';
-      thumbnail.style.width = '120px';
+      thumbnail.style.width = '150px';
       thumbnail.style.height = '80px';
       thumbnail.style.objectFit = 'cover';
       thumbnail.style.borderRadius = '6px';
@@ -807,11 +807,17 @@ window.VRCXExtended.Popup = {
       const thumbnail = document.createElement('img');
       thumbnail.src = item.thumbnail || 'https://picsum.photos/200';
       thumbnail.alt = item.name + ' thumbnail';
-      thumbnail.style.width = '120px';
-      thumbnail.style.height = '80px';
+      thumbnail.style.width = '160px';
+      thumbnail.style.height = '90px';
       thumbnail.style.objectFit = 'cover';
       thumbnail.style.borderRadius = '6px';
       thumbnail.style.border = '1px solid var(--surface-2, #3c3836)';
+      
+      // Add error handling for thumbnail loading
+      thumbnail.addEventListener('error', () => {
+        thumbnail.src = 'https://picsum.photos/200';
+        window.VRCXExtended.Utils.safeConsoleLog('warn', 'Failed to load thumbnail for:', item.name);
+      });
       
       thumbnailSection.appendChild(thumbnail);
       
@@ -1386,13 +1392,73 @@ window.VRCXExtended.Popup = {
 
       const header = document.createElement('div');
       header.className = 'modal-header';
-      header.innerHTML = '<strong>'+(item?.id ? 'Edit ' : 'Create ')+(isPlugin?'Plugin':'Theme')+'</strong>';
+      
+      const title = document.createElement('strong');
+      title.textContent = (item?.id ? 'Edit ' : 'Create ') + (isPlugin ? 'Plugin' : 'Theme');
+      header.appendChild(title);
+      
+              // Add fullscreen button
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'btn ghost';
+        fullscreenBtn.innerHTML = '<i class="el-icon-full-screen"></i>';
+        fullscreenBtn.title = 'Toggle Fullscreen';
+        fullscreenBtn.style.marginLeft = 'auto';
+        fullscreenBtn.style.padding = '4px 8px';
+        fullscreenBtn.style.fontSize = '12px';
+      
+      let isFullscreen = false;
+      fullscreenBtn.addEventListener('click', () => {
+        isFullscreen = !isFullscreen;
+        const fieldsSection = document.getElementById('editor-fields');
+        
+        if (isFullscreen) {
+          modal.style.width = '100vw';
+          modal.style.height = '100vh';
+          modal.style.borderRadius = '0';
+          modal.style.maxWidth = 'none';
+          modal.style.maxHeight = 'none';
+          fullscreenBtn.innerHTML = '<i class="el-icon-close"></i>';
+          fullscreenBtn.title = 'Exit Fullscreen';
+          
+          // Hide the fields section in fullscreen mode
+          if (fieldsSection) {
+            fieldsSection.style.display = 'none';
+          }
+          editorHost.className = 'editor-host no-fields';
+        } else {
+          modal.style.width = 'min(750px, 90vw)';
+          modal.style.height = 'min(600px, 85vh)';
+          modal.style.borderRadius = '8px';
+          modal.style.maxWidth = '90vw';
+          modal.style.maxHeight = '85vh';
+          fullscreenBtn.innerHTML = '<i class="el-icon-full-screen"></i>';
+          fullscreenBtn.title = 'Toggle Fullscreen';
+          
+          // Show the fields section in normal mode
+          if (fieldsSection) {
+            fieldsSection.style.display = 'flex';
+          }
+          editorHost.className = 'editor-host';
+        }
+        
+        // Refresh CodeMirror to adjust to new size
+        if (editor) {
+          setTimeout(() => {
+            editor.refresh();
+            editor.setSize('100%', '100%');
+          }, 50);
+        }
+              });
+        
+        header.appendChild(fullscreenBtn);
 
       const body = document.createElement('div');
       body.className = 'modal-body';
 
+      // Create field section (initially visible)
       const field = document.createElement('div');
       field.className = 'field';
+      field.id = 'editor-fields';
       
       const nameInput = document.createElement('input');
       nameInput.type = 'text';
@@ -1437,6 +1503,67 @@ window.VRCXExtended.Popup = {
 
       const footer = document.createElement('div');
       footer.className = 'modal-footer';
+      
+      // Add autosave toggle to left side of footer
+      const autosaveContainer = document.createElement('div');
+      autosaveContainer.style.display = 'flex';
+      autosaveContainer.style.alignItems = 'center';
+      autosaveContainer.style.gap = '8px';
+      autosaveContainer.style.marginRight = 'auto';
+      
+      const autosaveToggle = document.createElement('label');
+      autosaveToggle.className = 'switch';
+      autosaveToggle.style.margin = '0';
+      autosaveToggle.style.display = 'flex';
+      autosaveToggle.style.alignItems = 'center';
+      
+      const autosaveCheckbox = document.createElement('input');
+      autosaveCheckbox.type = 'checkbox';
+      autosaveCheckbox.checked = true; // Default to on for better UX
+      autosaveCheckbox.id = 'autosave-toggle';
+      
+      const autosaveSlider = document.createElement('span');
+      autosaveSlider.className = 'slider';
+      autosaveSlider.style.background = 'var(--accent-1, #ff6b35)'; // Default to enabled color
+      autosaveSlider.style.borderColor = 'var(--accent-1, #ff6b35)'; // Default to enabled color
+      
+      autosaveToggle.appendChild(autosaveCheckbox);
+      autosaveToggle.appendChild(autosaveSlider);
+      autosaveContainer.appendChild(autosaveToggle);
+      
+      const autosaveLabel = document.createElement('span');
+      autosaveLabel.textContent = 'Autosave';
+      autosaveLabel.style.fontSize = '12px';
+      autosaveLabel.style.color = '#a0a0a0';
+      autosaveContainer.appendChild(autosaveLabel);
+      
+      let autosaveEnabled = true; // Default to enabled
+      let autosaveTimer = null;
+      
+      autosaveCheckbox.addEventListener('change', (e) => {
+        autosaveEnabled = e.target.checked;
+        autosaveSlider.style.background = autosaveEnabled ? 'var(--accent-1, #ff6b35)' : '#4a4a4a';
+        autosaveSlider.style.borderColor = autosaveEnabled ? 'var(--accent-1, #ff6b35)' : '#4a4a4a';
+        
+        window.VRCXExtended.Utils.safeConsoleLog('log', '🔄 [Popup] Autosave toggled:', autosaveEnabled);
+        
+        if (autosaveEnabled) {
+          // Show notification
+          if (window.opener?.VRCXExtended?.Utils?.showNotification) {
+            window.opener.VRCXExtended.Utils.showNotification('Autosave enabled - changes will be saved automatically', 'success');
+          }
+        } else {
+          if (autosaveTimer) {
+            clearTimeout(autosaveTimer);
+            autosaveTimer = null;
+          }
+          // Show notification
+          if (window.opener?.VRCXExtended?.Utils?.showNotification) {
+            window.opener.VRCXExtended.Utils.showNotification('Autosave disabled', 'info');
+          }
+        }
+      });
+      
       const cancelBtn = document.createElement('button');
       cancelBtn.className = 'btn ghost';
       cancelBtn.textContent = 'Cancel';
@@ -1444,6 +1571,7 @@ window.VRCXExtended.Popup = {
       saveBtn.className = 'btn primary';
       saveBtn.textContent = 'Save';
 
+      footer.appendChild(autosaveContainer);
       footer.appendChild(cancelBtn);
       footer.appendChild(saveBtn);
 
@@ -1455,6 +1583,14 @@ window.VRCXExtended.Popup = {
 
       // Initialize CodeMirror
       let editor = null;
+      
+      // Show initial autosave notification
+      setTimeout(() => {
+        if (window.opener?.VRCXExtended?.Utils?.showNotification) {
+          window.opener.VRCXExtended.Utils.showNotification('Autosave is enabled by default - changes will be saved automatically', 'info');
+        }
+      }, 500);
+      
       setTimeout(() => {
         try {
           editor = CodeMirror.fromTextArea(textarea, {
@@ -1467,6 +1603,121 @@ window.VRCXExtended.Popup = {
             theme: 'default',
             value: item?.code || ''
           });
+          
+          // Add autosave functionality
+          const performAutosave = () => {
+            if (!autosaveEnabled || !editor) return;
+            
+            window.VRCXExtended.Utils.safeConsoleLog('log', '🔄 [Popup] Performing autosave...');
+            
+            try {
+              const storageKey = isPlugin ? KEYS.PLUGINS : KEYS.THEMES;
+              const data = window.VRCXExtended.PopupManager.readJSON(storageKey, []);
+            
+            // Get values from input fields if they exist, otherwise use existing values or defaults
+            const nameInput = document.getElementById('editor-name-input');
+            const descriptionInput = document.getElementById('editor-description-input');
+            const creatorInput = document.getElementById('editor-creator-input');
+            const thumbnailInput = document.getElementById('editor-thumbnail-input');
+            
+            const name = nameInput ? nameInput.value.trim() : (item?.name || (isPlugin ? 'Untitled Plugin' : 'Untitled Theme'));
+            const description = descriptionInput ? descriptionInput.value.trim() : (item?.description || '');
+            const creator = creatorInput ? creatorInput.value.trim() : (item?.creator || '');
+            const thumbnail = thumbnailInput ? thumbnailInput.value.trim() : (item?.thumbnail || 'https://picsum.photos/200');
+            
+            let code = '';
+            try {
+              code = editor.getValue();
+            } catch(e) {
+              code = textarea.value;
+            }
+
+            if (item?.id) {
+              const index = data.findIndex(x => x.id === item.id);
+              if (index !== -1) {
+                data[index].name = name;
+                data[index].description = description;
+                data[index].creator = creator;
+                data[index].thumbnail = thumbnail;
+                data[index].code = code;
+                data[index].updatedAt = window.VRCXExtended.PopupManager.nowIso();
+              }
+            } else {
+              // For new items, create a temporary save
+              const tempId = 'temp_' + Date.now();
+              data.push({
+                id: tempId,
+                name,
+                description,
+                creator,
+                thumbnail,
+                code,
+                enabled: true,
+                createdAt: window.VRCXExtended.PopupManager.nowIso(),
+                updatedAt: window.VRCXExtended.PopupManager.nowIso(),
+              });
+              // Update the item reference for subsequent autosaves
+              item = { id: tempId };
+            }
+
+            window.VRCXExtended.PopupManager.writeJSON(storageKey, data);
+            
+            window.VRCXExtended.Utils.safeConsoleLog('log', '✅ [Popup] Autosave completed successfully');
+            
+            // Show subtle autosave indicator
+            const originalColor = autosaveSlider.style.background;
+            autosaveSlider.style.background = '#67c23a';
+            autosaveSlider.style.borderColor = '#67c23a';
+            setTimeout(() => {
+              autosaveSlider.style.background = originalColor;
+              autosaveSlider.style.borderColor = originalColor;
+            }, 1000);
+            
+            } catch (error) {
+              window.VRCXExtended.Utils.safeConsoleLog('error', '❌ [Popup] Autosave failed:', error);
+              
+              // Show error indicator
+              const originalColor = autosaveSlider.style.background;
+              autosaveSlider.style.background = '#f56c6c';
+              autosaveSlider.style.borderColor = '#f56c6c';
+              setTimeout(() => {
+                autosaveSlider.style.background = originalColor;
+                autosaveSlider.style.borderColor = originalColor;
+              }, 2000);
+            }
+          };
+          
+          // Set up autosave on editor changes
+          editor.on('change', () => {
+            window.VRCXExtended.Utils.safeConsoleLog('log', '📝 [Popup] Editor changed, autosave enabled:', autosaveEnabled);
+            if (autosaveEnabled) {
+              if (autosaveTimer) {
+                clearTimeout(autosaveTimer);
+              }
+              autosaveTimer = setTimeout(performAutosave, 2000); // Autosave after 2 seconds of inactivity
+            }
+          });
+          
+          // Set up autosave on input field changes
+          const setupInputAutosave = (inputElement) => {
+            if (inputElement) {
+              inputElement.addEventListener('input', () => {
+                window.VRCXExtended.Utils.safeConsoleLog('log', '📝 [Popup] Input field changed, autosave enabled:', autosaveEnabled);
+                if (autosaveEnabled) {
+                  if (autosaveTimer) {
+                    clearTimeout(autosaveTimer);
+                  }
+                  autosaveTimer = setTimeout(performAutosave, 2000); // Autosave after 2 seconds of inactivity
+                }
+              });
+            }
+          };
+          
+          // Add autosave listeners to all input fields
+          setupInputAutosave(nameInput);
+          setupInputAutosave(descriptionInput);
+          setupInputAutosave(creatorInput);
+          setupInputAutosave(thumbnailInput);
           
           setTimeout(() => {
             if (editor) {
@@ -1482,6 +1733,12 @@ window.VRCXExtended.Popup = {
       }, 100);
 
       const closeEditor = () => {
+        // Clear autosave timer
+        if (autosaveTimer) {
+          clearTimeout(autosaveTimer);
+          autosaveTimer = null;
+        }
+        
         if (editor) {
           try {
             editor.toTextArea();
@@ -1499,10 +1756,17 @@ window.VRCXExtended.Popup = {
       saveBtn.addEventListener('click', function() {
         const storageKey = isPlugin ? KEYS.PLUGINS : KEYS.THEMES;
         const data = window.VRCXExtended.PopupManager.readJSON(storageKey, []);
-        const name = nameInput.value.trim() || (isPlugin? 'Untitled Plugin' : 'Untitled Theme');
-        const description = descriptionInput.value.trim();
-        const creator = creatorInput.value.trim();
-        const thumbnail = thumbnailInput.value.trim() || 'https://picsum.photos/200';
+        
+        // Get values from input fields if they exist, otherwise use existing values or defaults
+        const nameInput = document.getElementById('editor-name-input');
+        const descriptionInput = document.getElementById('editor-description-input');
+        const creatorInput = document.getElementById('editor-creator-input');
+        const thumbnailInput = document.getElementById('editor-thumbnail-input');
+        
+        const name = nameInput ? nameInput.value.trim() : (item?.name || (isPlugin ? 'Untitled Plugin' : 'Untitled Theme'));
+        const description = descriptionInput ? descriptionInput.value.trim() : (item?.description || '');
+        const creator = creatorInput ? creatorInput.value.trim() : (item?.creator || '');
+        const thumbnail = thumbnailInput ? thumbnailInput.value.trim() : (item?.thumbnail || 'https://picsum.photos/200');
         
         let code = '';
         if (editor) {
@@ -1574,6 +1838,15 @@ window.VRCXExtended.Popup = {
         if (e.key === 'Escape') {
           closeEditor();
         }
+        if (e.key === 'F11') {
+          e.preventDefault();
+          fullscreenBtn.click();
+        }
+        if (e.ctrlKey && e.key === 'a') {
+          e.preventDefault();
+          autosaveCheckbox.checked = !autosaveCheckbox.checked;
+          autosaveCheckbox.dispatchEvent(new Event('change'));
+        }
       });
     },
 
@@ -1626,6 +1899,12 @@ window.VRCXExtended.Popup = {
       thumbnail.style.objectFit = 'cover';
       thumbnail.style.borderRadius = '8px';
       thumbnail.style.border = '1px solid #333';
+      
+      // Add error handling for thumbnail loading
+      thumbnail.addEventListener('error', () => {
+        thumbnail.src = 'https://picsum.photos/200';
+        window.VRCXExtended.Utils.safeConsoleLog('warn', 'Failed to load thumbnail for detail modal:', item.name);
+      });
 
       // Info section
       const infoSection = document.createElement('div');

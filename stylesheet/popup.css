@@ -240,7 +240,7 @@ body.x-container {
 
 /* Content List - Grid Layout - More Compact */
 .content-list { 
-  padding: 16px; 
+  padding: 12px; 
   overflow: auto; 
   background: #1e1e1e;
   scrollbar-width: thin;
@@ -248,6 +248,12 @@ body.x-container {
   display: grid; 
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
   gap: 12px;
+  row-gap: 12px;
+  column-gap: 8px;
+  align-items: start;
+  justify-items: start;
+  align-content: start;
+  justify-content: start;
   flex: 1;
 }
 
@@ -500,6 +506,16 @@ input:checked + .slider:before {
   overflow: hidden; 
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.4), 0 6px 12px rgba(0, 0, 0, 0.2);
   animation: slideUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease;
+}
+
+/* Fullscreen modal styles */
+.modal.fullscreen {
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
 }
 
 /* Modern Header - More Compact */
@@ -514,6 +530,32 @@ input:checked + .slider:before {
   font-weight: 600;
   color: #ffffff;
   position: relative;
+}
+
+/* Fullscreen button in modal header */
+.modal-header .btn {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.modal-header .btn:hover {
+  background: #4a4a4a;
+  transform: scale(1.05);
+}
+
+/* Autosave toggle styling */
+.modal-header .switch {
+  transform: scale(0.8);
+}
+
+.modal-header .switch .slider {
+  transition: all 0.3s ease;
+}
+
+.modal-header .switch .slider:before {
+  transition: all 0.3s ease;
 }
 
 .modal-header::before {
@@ -544,6 +586,7 @@ input:checked + .slider:before {
   padding: 16px 20px 12px 20px; 
   background: #1a1a1a;
   border-bottom: 1px solid #333;
+  transition: all 0.3s ease;
 }
 
 /* Modern Input Fields - More Compact */
@@ -580,6 +623,13 @@ input:checked + .slider:before {
   overflow: hidden;
   border: 2px solid #404040;
   background: #2a2a2a;
+  transition: all 0.3s ease;
+}
+
+/* Editor host when no field section */
+.editor-host.no-fields {
+  margin: 20px;
+  flex: 1;
 }
 
 /* Enhanced Code Editor - More Compact */
