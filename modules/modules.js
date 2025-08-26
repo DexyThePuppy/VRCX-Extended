@@ -228,9 +228,13 @@ window.VRCXExtended.ModuleSystem = {
      */
     async loadExternalResource(src, type) {
         const isDebugMode = window.VRCXExtended?.Config?.getSetting?.('debugMode') || false;
+        const disableFallback = window.VRCXExtended?.Config?.getSetting?.('disableFallback') || false;
         let fallbackSrc = null;
         
-        // If in debug mode and this is a GitHub URL, prepare fallback
+        console.log(`🔧 [Debug] Loading ${type} from: ${src}`);
+        console.log(`🔧 [Debug] Debug mode: ${isDebugMode}, Disable fallback: ${disableFallback}`);
+        
+        // If in debug mode and this is a GitHub URL, prepare local fallback
         if (isDebugMode && src.includes('raw.githubusercontent.com')) {
             // Extract filename from GitHub URL
             const filename = src.split('/').pop();
@@ -241,16 +245,35 @@ window.VRCXExtended.ModuleSystem = {
             } else if (type === 'css' && localPaths.stylesheets) {
                 fallbackSrc = `${localPaths.stylesheets}/${filename}`;
             }
+            console.log(`🔧 [Debug] Debug mode: GitHub URL detected, local fallback: ${fallbackSrc}`);
         }
         
-        // If in debug mode and this is a local file, prepare GitHub fallback
+        // If in debug mode and this is a local file, prepare GitHub fallback (only if fallback is not disabled)
         if (isDebugMode && src.startsWith('file://')) {
-            const filename = src.split('/').pop();
-            if (type === 'html') {
-                fallbackSrc = `${this.config.repository.baseUrl}/${this.config.repository.paths.html}/${filename}`;
-            } else if (type === 'css') {
-                fallbackSrc = `${this.config.repository.baseUrl}/${this.config.repository.paths.stylesheets}/${filename}`;
+            if (!disableFallback) {
+                const filename = src.split('/').pop();
+                if (type === 'html') {
+                    fallbackSrc = `${this.config.repository.baseUrl}/${this.config.repository.paths.html}/${filename}`;
+                } else if (type === 'css') {
+                    fallbackSrc = `${this.config.repository.baseUrl}/${this.config.repository.paths.stylesheets}/${filename}`;
+                }
+                console.log(`🔧 [Debug] Debug mode: Local file detected, GitHub fallback: ${fallbackSrc}`);
+            } else {
+                console.log(`🔧 [Debug] Debug mode: Local file detected, fallback disabled`);
             }
+        }
+        
+        // If NOT in debug mode and this is a GitHub URL, prepare local fallback
+        if (!isDebugMode && src.includes('raw.githubusercontent.com')) {
+            const filename = src.split('/').pop();
+            const localPaths = window.VRCXExtended?.Config?.getSetting?.('localDebugPaths') || {};
+            
+            if (type === 'html' && localPaths.html) {
+                fallbackSrc = `${localPaths.html}/${filename}`;
+            } else if (type === 'css' && localPaths.stylesheets) {
+                fallbackSrc = `${localPaths.stylesheets}/${filename}`;
+            }
+            console.log(`🔧 [Debug] Production mode: GitHub URL detected, local fallback: ${fallbackSrc}`);
         }
         
         try {
@@ -384,10 +407,13 @@ window.VRCXExtended.ModuleSystem = {
             }
         }
         
-        // If in debug mode and this is a local file, prepare GitHub fallback
+        // If in debug mode and this is a local file, prepare GitHub fallback (only if fallback is not disabled)
         if (isDebugMode && src.startsWith('file://')) {
-            const filename = src.split('/').pop();
-            fallbackSrc = `${this.config.repository.baseUrl}/${this.config.repository.paths.modules}/${filename}`;
+            const disableFallback = window.VRCXExtended?.Config?.getSetting?.('disableFallback') || false;
+            if (!disableFallback) {
+                const filename = src.split('/').pop();
+                fallbackSrc = `${this.config.repository.baseUrl}/${this.config.repository.paths.modules}/${filename}`;
+            }
         }
         
         try {
@@ -903,9 +929,15 @@ window.VRCXExtended.ModuleSystem = {
         try {
             console.log('📋 Loading external HTML and CSS resources...');
             
+            const htmlUrl = this.getResourceUrl('html');
+            const cssUrl = this.getResourceUrl('css');
+            
+            console.log('🔧 [Debug] HTML URL:', htmlUrl);
+            console.log('🔧 [Debug] CSS URL:', cssUrl);
+            
             const [htmlContent, cssContent] = await Promise.all([
-                this.loadExternalResource(this.getResourceUrl('html'), 'html'),
-                this.loadExternalResource(this.getResourceUrl('css'), 'css')
+                this.loadExternalResource(htmlUrl, 'html'),
+                this.loadExternalResource(cssUrl, 'css')
             ]);
             
             console.log('✅ External resources loaded successfully');

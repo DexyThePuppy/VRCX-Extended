@@ -123,12 +123,14 @@ html, body {
 
 body.x-container { 
   display: flex; 
-  flex-direction: row;
+  flex-direction: column;
   background: #1e1e1e;
   color: #ffffff; 
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
   font-size: 12px;
   line-height: 1.4;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Hidden toolbar */
@@ -139,7 +141,6 @@ body.x-container {
 .mods-layout { 
   flex: 1; 
   display: flex; 
-  min-height: 100vh; 
   overflow: hidden;
 }
 
@@ -147,16 +148,39 @@ body.x-container {
 .sidebar { 
   width: 200px; 
   border-right: 1px solid #2a2a2a; 
-  padding: 12px 0; 
+  padding: 0; 
   background: #161616;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 8px;
+}
+
+.sidebar .items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Program Header - Matches Content Header Layout */
+.program-header { 
+  padding: 12px 20px; 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  border-bottom: 1px solid #2a2a2a; 
+  background: #161616;
+}
+
+.program-header .title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
 }
 
 .sidebar .menu-item { 
-  margin: 0 8px;
+  margin: 0 8px 1px 8px;
   padding: 6px 12px; 
   cursor: pointer; 
   display: flex; 
@@ -224,6 +248,54 @@ body.x-container {
   display: grid; 
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
   gap: 12px;
+  flex: 1;
+}
+
+/* Slim Footer */
+.app-footer {
+  background: #161616;
+  border-top: 1px solid #2a2a2a;
+  padding: 8px 20px;
+  flex-shrink: 0;
+}
+
+.footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  color: #888888;
+  max-width: 100%;
+}
+
+.footer-info {
+  font-weight: 500;
+}
+
+.footer-separator {
+  color: #555555;
+  font-weight: 300;
+}
+
+.footer-left,
+.footer-center,
+.footer-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.footer-left {
+  justify-content: flex-start;
+}
+
+.footer-center {
+  justify-content: center;
+}
+
+.footer-right {
+  justify-content: flex-end;
 }
 
 .content-list::-webkit-scrollbar {
@@ -539,6 +611,56 @@ input:checked + .slider:before {
 
 .CodeMirror .CodeMirror-selected {
   background: rgba(255, 107, 53, 0.2) !important;
+}
+
+/* Detail Modal Styles */
+.modal-backdrop .modal {
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+.modal-backdrop .modal .modal-body {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #3a3a3a transparent;
+}
+
+.modal-backdrop .modal .modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-backdrop .modal .modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-backdrop .modal .modal-body::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.modal-backdrop .modal .modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hover);
+}
+
+/* Store subtabs styling */
+.store-subtabs .subtab {
+  border-radius: 4px;
+  border: 1px solid #3a3a3a;
+  background: #2a2a2a;
+  color: #a0a0a0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.store-subtabs .subtab:hover {
+  background: #3a3a3a;
+  color: #ffffff;
+}
+
+.store-subtabs .subtab.active {
+  background: var(--accent-1, #ff6b35);
+  border-color: var(--accent-1, #ff6b35);
+  color: #ffffff;
 }
 
 /* Modern Footer - More Compact */

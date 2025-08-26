@@ -21,6 +21,7 @@ window.VRCXExtended.Config = {
   DEFAULT_SETTINGS: {
     disableCache: false,
     debugMode: false,
+    disableFallback: false,
     localDebugPaths: {
       modules: 'file://vrcx/extended/modules',
       html: 'file://vrcx/extended/html', 
