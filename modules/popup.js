@@ -986,7 +986,7 @@ window.VRCXExtended.Popup = {
         window.VRCXExtended.Utils.safeConsoleLog('log', '🔍 [Popup] Debug mode enabled, using local path:', baseUrl);
       } else {
         // Use GitHub URL from config
-        baseUrl = config.STORE.GITHUB.BASE_URL + '/store';
+        baseUrl = config.STORE.GITHUB.BASE_URL + '/store/' + type;
         window.VRCXExtended.Utils.safeConsoleLog('log', '🔍 [Popup] Using GitHub URL:', baseUrl);
       }
       
